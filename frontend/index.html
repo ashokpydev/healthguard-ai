@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HealthGuard AI</title>
+    <link rel="icon" type="image/png" href="/static/assets/healthguard-logo.png" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9Oer+R4sF86dIHNDz0W1eN7NqwnA7vOYKTmjR2U4S8hBT"
+      crossorigin="anonymous"
+    />
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="auth-shell">
+      <section class="auth-hero">
+        <div class="corner-brand">
+          <img src="/static/assets/healthguard-logo.png" alt="HealthGuard AI logo" />
+        </div>
+        <p class="eyebrow">HealthGuard AI</p>
+        <h1>Preventive health intelligence with clinical safety rails.</h1>
+        <p class="summary">
+          Confirm your email, then enter a role-based workspace for safe reports, doctor review,
+          knowledge governance, and audit visibility.
+        </p>
+        <div class="trust-grid">
+          <div><strong>Safety</strong><span>No diagnosis or prescriptions</span></div>
+          <div><strong>Privacy</strong><span>Consent-gated health data</span></div>
+          <div><strong>Review</strong><span>Doctor-ready reports</span></div>
+        </div>
+      </section>
+
+      <section class="auth-card">
+        <div class="auth-card-header">
+          <div>
+            <p class="eyebrow">Secure access</p>
+            <h2>Register or login</h2>
+          </div>
+          <span class="pill">Email required</span>
+        </div>
+        <div class="auth-grid">
+          <form id="register-form" class="form compact">
+            <label>
+              Name
+              <input id="register-name" value="Demo Patient" required />
+            </label>
+            <label>
+              Email
+              <input id="register-email" type="email" value="patient@gmail.com" required />
+            </label>
+            <label>
+              Password
+              <input id="register-password" type="password" value="secret123" required />
+            </label>
+            <label>
+              User type
+              <select id="register-role">
+                <option value="patient">Patient</option>
+                <option value="doctor">Doctor</option>
+                <option value="dietician">Dietician</option>
+                <option value="admin">Admin</option>
+                <option value="compliance">Compliance officer</option>
+              </select>
+            </label>
+            <label>
+              Organization
+              <input id="register-organization" placeholder="Clinic, hospital, company" />
+            </label>
+            <label>
+              License / ID
+              <input id="register-license" placeholder="For clinicians or staff" />
+            </label>
+            <button type="submit">Create account</button>
+          </form>
+
+          <form id="login-form" class="form compact">
+            <label>
+              Email
+              <input id="login-email" type="email" value="patient@gmail.com" required />
+            </label>
+            <label>
+              Password
+              <input id="login-password" type="password" value="secret123" required />
+            </label>
+            <button type="submit">Login</button>
+            <button id="logout" class="secondary" type="button">Clear session</button>
+          </form>
+        </div>
+        <div class="sso-box">
+          <p class="eyebrow">Single sign-on</p>
+          <div class="sso-grid">
+            <button class="sso-button google" type="button" data-provider="google"><span class="logo-google">G</span> Google</button>
+            <button class="sso-button facebook" type="button" data-provider="facebook"><span class="logo-facebook">f</span> Facebook</button>
+            <button class="sso-button instagram" type="button" data-provider="instagram"><span class="logo-instagram"></span> Instagram</button>
+          </div>
+        </div>
+        <div id="auth-status" class="status">Register with a valid email, confirm the 6-digit code, then enter the dashboard.</div>
+      </section>
+    </main>
+
+    <div id="verification-modal" class="modal" aria-hidden="true">
+      <div class="modal-backdrop"></div>
+      <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="verification-title">
+        <button id="close-verification-modal" class="icon-button" type="button" aria-label="Close">x</button>
+        <p class="eyebrow">Email confirmation</p>
+        <h2 id="verification-title">Enter the 6-digit code</h2>
+        <p id="verification-copy" class="summary">We sent a confirmation code to your email address.</p>
+        <label>
+          Confirmation code
+          <input id="verification-code" inputmode="numeric" maxlength="6" placeholder="000000" />
+        </label>
+        <div class="modal-actions">
+          <button id="verify-email" type="button">Submit code</button>
+          <button id="resend-confirmation" class="secondary" type="button">Resend code</button>
+        </div>
+      </section>
+    </div>
+
+    <main id="app-shell" class="shell requires-auth">
+      <nav class="app-menu navbar navbar-expand-lg" aria-label="Workspace menu">
+        <div class="menu-brand">
+          <div class="brand-shield" aria-hidden="true"></div>
+          <div>
+            <strong>HealthGuard AI</strong>
+            <span>Clinical safety workspace</span>
+          </div>
+        </div>
+        <div class="menu-actions nav nav-pills">
+          <button class="menu-button nav-link active" type="button" data-scroll-target="home-panel">Home</button>
+          <button class="menu-button nav-link" type="button" data-scroll-target="assessment-panel">Assessment</button>
+          <button class="menu-button nav-link" type="button" data-scroll-target="documents-panel">Documents</button>
+          <button class="menu-button nav-link" type="button" data-scroll-target="reports-panel">Reports</button>
+          <button class="menu-button nav-link" type="button" data-scroll-target="role-panel">Role tools</button>
+        </div>
+      </nav>
+
+      <section id="home-panel" class="panel session-panel shadow-lg">
+        <div class="hero-content">
+          <h1 id="home-title">Your preventive health workspace</h1>
+          <p id="home-subtitle" class="summary">Complete a guided assessment, attach optional health documents, and generate a doctor-ready educational report.</p>
+          <div class="hero-tags">
+            <button type="button" data-scroll-target="role-panel">Role workflows</button>
+            <button type="button" data-scroll-target="assessment-panel">Self-service intake</button>
+            <button type="button" data-scroll-target="reports-panel">Report export</button>
+          </div>
+          <div class="home-actions">
+            <button type="button" data-scroll-target="assessment-panel">Start assessment</button>
+          </div>
+        </div>
+        <div class="hero-aside">
+          <button id="home-logout" class="secondary" type="button">Logout</button>
+        </div>
+      </section>
+
+      <section class="workflow-cards" aria-label="Workflow summary">
+        <button class="workflow-card" type="button" data-scroll-target="assessment-panel">
+          <span class="info-icon patient-info"></span>
+          <span class="workflow-card-body">
+            <strong>Patient Info First:</strong>
+            <span>Fill in key patient details to begin</span>
+          </span>
+        </button>
+        <button class="workflow-card" type="button" data-scroll-target="documents-panel">
+          <span class="info-icon upload-info"></span>
+          <span class="workflow-card-body">
+            <strong>Upload Files:</strong>
+            <span>Optionally add lab notes or summaries</span>
+          </span>
+        </button>
+        <button class="workflow-card" type="button" data-scroll-target="reports-panel">
+          <span class="info-icon safety-info"></span>
+          <span class="workflow-card-body">
+            <strong>Safety Alerts:</strong>
+            <span>Critical warnings shown during report</span>
+          </span>
+        </button>
+      </section>
+
+      <section class="workspace-grid" aria-label="HealthGuard workspace">
+      <section id="assessment-panel" class="panel intake shadow-lg">
+        <div>
+          <p class="eyebrow">Assessment</p>
+          <h2>Personalized health risk report</h2>
+          <p class="summary">
+            Create a safe, educational health-risk report from symptoms, lifestyle, diet, climate, and occupation details.
+          </p>
+        </div>
+
+        <form id="assessment-form" class="form">
+          <label>
+            Age
+            <input id="age" type="number" min="0" max="125" required />
+          </label>
+          <label>
+            Gender
+            <select id="gender" required>
+              <option value="" selected disabled>Select gender</option>
+              <option>male</option>
+              <option>female</option>
+              <option>other</option>
+              <option>prefer not to say</option>
+            </select>
+          </label>
+          <label>
+            Location
+            <input id="location" required />
+          </label>
+          <label>
+            Climate / environment
+            <select id="climate" required>
+              <option value="" selected disabled>Select environment</option>
+              <option>hot weather</option>
+              <option>humid weather</option>
+              <option>cold weather</option>
+              <option>high pollution</option>
+              <option>monsoon or mosquito exposure</option>
+            </select>
+          </label>
+          <label>
+            Height cm
+            <input id="height" type="number" min="40" max="260" required />
+          </label>
+          <label>
+            Weight kg
+            <input id="weight" type="number" min="2" max="350" required />
+          </label>
+          <label>
+            Occupation
+            <input id="occupation" required />
+          </label>
+          <label>
+            Sleep hours
+            <input id="sleep" type="number" min="0" max="24" step="0.5" required />
+          </label>
+          <label>
+            Exercise
+            <select id="exercise" required>
+              <option value="" selected disabled>Select activity level</option>
+              <option>none</option>
+              <option>rare</option>
+              <option>weekly</option>
+              <option>regular</option>
+            </select>
+          </label>
+          <label>
+            Diet pattern
+            <select id="diet-pattern" required>
+              <option value="" selected disabled>Select diet pattern</option>
+              <option>balanced home food</option>
+              <option>vegetarian</option>
+              <option>non-vegetarian mixed diet</option>
+              <option>processed food, high sugar</option>
+              <option>high salt packaged food</option>
+              <option>late-night eating</option>
+              <option>low protein or low vegetables</option>
+            </select>
+          </label>
+          <label>
+            Water intake
+            <select id="water-intake" required>
+              <option value="" selected disabled>Select water intake</option>
+              <option>adequate water</option>
+              <option>low water</option>
+              <option>high caffeine, low water</option>
+            </select>
+          </label>
+          <label>
+            Smoking
+            <select id="smoking" required>
+              <option value="" selected disabled>Select smoking status</option>
+              <option>none</option>
+              <option>current smoker</option>
+              <option>former smoker</option>
+              <option>passive smoke exposure</option>
+            </select>
+          </label>
+          <label>
+            Alcohol
+            <select id="alcohol" required>
+              <option value="" selected disabled>Select alcohol status</option>
+              <option>none</option>
+              <option>occasional alcohol</option>
+              <option>frequent alcohol</option>
+            </select>
+          </label>
+          <fieldset class="catalog wide">
+            <legend>Food catalog</legend>
+            <div class="catalog-grid">
+              <label>
+                Food group
+                <select id="food-group">
+                  <option value="" selected>Select group</option>
+                  <option value="grains">Grains and staples</option>
+                  <option value="protein">Protein foods</option>
+                  <option value="vegetables">Vegetables</option>
+                  <option value="fruits">Fruits</option>
+                  <option value="dairy">Dairy and alternatives</option>
+                  <option value="snacks">Snacks and packaged foods</option>
+                  <option value="drinks">Drinks</option>
+                </select>
+              </label>
+              <label>
+                Food item
+                <select id="food-item">
+                  <option value="" selected>Select food item</option>
+                </select>
+              </label>
+              <button id="add-food" class="secondary" type="button">Add food</button>
+            </div>
+            <div id="selected-foods" class="selected-list">No food items selected.</div>
+          </fieldset>
+          <label>
+            Main symptom
+            <input id="symptom-name" />
+          </label>
+          <label>
+            Severity
+            <select id="symptom-severity">
+              <option value="">Not applicable</option>
+              <option value="1">1 - mild</option>
+              <option value="3">3 - low</option>
+              <option value="5">5 - moderate</option>
+              <option value="7">7 - severe</option>
+              <option value="10">10 - worst</option>
+            </select>
+          </label>
+          <label>
+            Duration days
+            <input id="symptom-duration" type="number" min="0" max="3650" />
+          </label>
+          <label>
+            Existing conditions
+            <input id="conditions" placeholder="Diabetes, BP, thyroid" />
+          </label>
+          <label>
+            Family history
+            <input id="family-history" placeholder="Diabetes, heart disease" />
+          </label>
+          <label>
+            Current medications
+            <input id="medications" placeholder="Metformin, BP tablet" />
+          </label>
+          <label class="wide">
+            Allergies
+            <input id="allergies" placeholder="Food or medicine allergies" />
+          </label>
+          <label class="wide">
+            Symptoms or question
+            <textarea id="question" rows="4" required></textarea>
+          </label>
+          <label class="consent wide">
+            <input id="consent" type="checkbox" checked />
+            I consent to process this health information for an educational risk report.
+          </label>
+          <button type="submit">Generate report</button>
+        </form>
+      </section>
+
+      <div class="side-stack">
+      <section id="documents-panel" class="panel documents-panel shadow-lg">
+        <div>
+          <p class="eyebrow">Optional documents</p>
+          <h2>Upload health documents</h2>
+          <p class="summary">
+            Add lab notes, discharge summaries, or prior reports when useful. Uploading is optional;
+            extracted details are used only for the next report in this demo.
+          </p>
+        </div>
+        <form id="document-form" class="upload-form">
+          <label class="upload-zone">
+            <span>Choose document</span>
+            <input id="document-file" type="file" accept=".txt,.md,.csv,.json,.pdf,.docx" />
+          </label>
+          <div class="actions">
+            <button id="upload-document" type="submit">Upload and read</button>
+            <button id="clear-document-context" class="secondary" type="button">Clear context</button>
+          </div>
+        </form>
+        <div id="document-status" class="report compact-report">
+          No document is attached. You can generate a report without uploading files.
+        </div>
+      </section>
+
+      <section class="panel history shadow-lg">
+        <div class="output-header">
+          <div>
+            <p class="eyebrow">Demo workflow</p>
+            <h2>Saved reports</h2>
+          </div>
+          <button id="refresh-history" class="secondary" type="button">Refresh</button>
+        </div>
+        <div id="history" class="report">No reports loaded yet.</div>
+      </section>
+
+      <section id="role-panel" class="panel admin-panel shadow-lg">
+        <div class="output-header">
+          <div>
+            <p class="eyebrow">Role tools</p>
+            <h2 id="role-tools-title">Role actions</h2>
+          </div>
+          <button id="load-role-data" class="secondary" type="button">Load</button>
+        </div>
+        <form id="knowledge-form" class="form compact role-admin">
+          <label>
+            Knowledge title
+            <input id="knowledge-title" value="Heat safety guidance" />
+          </label>
+          <label class="wide">
+            Approved guidance
+            <textarea id="knowledge-content" rows="3">During hot weather, maintain hydration, avoid peak heat exposure, and seek medical care for severe dehydration symptoms.</textarea>
+          </label>
+          <button type="submit">Add knowledge</button>
+        </form>
+        <div id="role-output" class="report">Login as doctor, dietician, admin, or compliance officer to use role-specific actions.</div>
+      </section>
+      </div>
+      </section>
+
+      <section id="reports-panel" class="panel output generated-report-panel dashboard-bottom-section shadow-lg" aria-live="polite" hidden>
+        <div class="output-header">
+          <div>
+            <p class="eyebrow">AI safety first</p>
+            <h2>Generated report</h2>
+          </div>
+          <span id="risk-pill" class="pill">Ready</span>
+        </div>
+        <div id="report" class="report">
+          Enter details and generate a report. Emergency red flags will be surfaced immediately.
+        </div>
+      </section>
+    </main>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+      crossorigin="anonymous"
+    ></script>
+    <script src="/static/app.js"></script>
+  </body>
+</html>
