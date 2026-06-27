@@ -130,9 +130,11 @@
         <div class="menu-actions nav nav-pills">
           <button class="menu-button nav-link active" type="button" data-scroll-target="home-panel">Home</button>
           <button class="menu-button nav-link" type="button" data-scroll-target="assessment-panel">Assessment</button>
+          <button class="menu-button nav-link" type="button" data-scroll-target="voice-panel">Voice</button>
           <button class="menu-button nav-link" type="button" data-scroll-target="documents-panel">Documents</button>
           <button class="menu-button nav-link" type="button" data-scroll-target="reports-panel">Reports</button>
-          <button class="menu-button nav-link" type="button" data-scroll-target="role-panel">Role tools</button>
+          <button class="menu-button nav-link role-only" type="button" data-scroll-target="role-panel">Role tools</button>
+          <button id="open-tour" class="menu-button nav-link" type="button">Tour</button>
         </div>
       </nav>
 
@@ -141,8 +143,9 @@
           <h1 id="home-title">Your preventive health workspace</h1>
           <p id="home-subtitle" class="summary">Complete a guided assessment, attach optional health documents, and generate a doctor-ready educational report.</p>
           <div class="hero-tags">
-            <button type="button" data-scroll-target="role-panel">Role workflows</button>
+            <button class="role-only" type="button" data-scroll-target="role-panel">Role workflows</button>
             <button type="button" data-scroll-target="assessment-panel">Self-service intake</button>
+            <button type="button" data-scroll-target="voice-panel">Voice intake</button>
             <button type="button" data-scroll-target="reports-panel">Report export</button>
           </div>
           <div class="home-actions">
@@ -167,6 +170,13 @@
           <span class="workflow-card-body">
             <strong>Upload Files:</strong>
             <span>Optionally add lab notes or summaries</span>
+          </span>
+        </button>
+        <button class="workflow-card" type="button" data-scroll-target="voice-panel">
+          <span class="info-icon voice-info"></span>
+          <span class="workflow-card-body">
+            <strong>Voice Assistant:</strong>
+            <span>Speak symptoms and hear safe guidance</span>
           </span>
         </button>
         <button class="workflow-card" type="button" data-scroll-target="reports-panel">
@@ -359,6 +369,38 @@
       </section>
 
       <div class="side-stack">
+      <section id="voice-panel" class="panel voice-panel shadow-lg">
+        <div class="output-header">
+          <div>
+            <p class="eyebrow">Voice assistant</p>
+            <h2>Speak with HealthGuard AI</h2>
+          </div>
+          <span id="voice-pill" class="pill">Idle</span>
+        </div>
+        <p class="summary">
+          Use voice to describe symptoms, lifestyle, or uploaded report questions. The answer is generated with the same safety checks and supporting knowledge used by the chatbot.
+        </p>
+        <div class="voice-controls">
+          <button id="voice-start" type="button" class="voice-mic-button" aria-pressed="false">
+            <span class="mic-symbol" aria-hidden="true"></span>
+            Start mic
+          </button>
+          <button id="voice-stop" class="secondary" type="button" disabled>Stop</button>
+          <button id="voice-read" class="secondary" type="button" disabled>Read answer</button>
+          <button id="voice-clear" class="secondary" type="button">Clear</button>
+        </div>
+        <label class="voice-transcript-label">
+          Voice transcript
+          <textarea id="voice-transcript" rows="4" placeholder="Your spoken input will appear here. You can edit it before sending."></textarea>
+        </label>
+        <div class="actions">
+          <button id="voice-submit" type="button">Ask HealthGuard</button>
+        </div>
+        <div id="voice-status" class="report compact-report">
+          Press Start mic and speak clearly. Your browser may ask for microphone permission.
+        </div>
+      </section>
+
       <section id="documents-panel" class="panel documents-panel shadow-lg">
         <div>
           <p class="eyebrow">Optional documents</p>
@@ -394,7 +436,7 @@
         <div id="history" class="report">No reports loaded yet.</div>
       </section>
 
-      <section id="role-panel" class="panel admin-panel shadow-lg">
+      <section id="role-panel" class="panel admin-panel shadow-lg role-only">
         <div class="output-header">
           <div>
             <p class="eyebrow">Role tools</p>
@@ -431,6 +473,23 @@
         </div>
       </section>
     </main>
+
+    <div id="tour-modal" class="modal tour-modal" aria-hidden="true">
+      <div class="modal-backdrop"></div>
+      <section class="modal-panel tour-panel" role="dialog" aria-modal="true" aria-labelledby="tour-title">
+        <button id="close-tour" class="icon-button" type="button" aria-label="Close">x</button>
+        <p id="tour-eyebrow" class="eyebrow">Application tour</p>
+        <h2 id="tour-title">Welcome to HealthGuard AI</h2>
+        <p id="tour-copy" class="summary">A guided workspace for safe preventive health reports, document support, voice intake, and clinician review.</p>
+        <div id="tour-visual" class="tour-visual" aria-hidden="true"></div>
+        <div id="tour-progress" class="tour-progress" aria-label="Tour progress"></div>
+        <div class="modal-actions tour-actions">
+          <button id="tour-prev" class="secondary" type="button">Previous</button>
+          <button id="tour-next" type="button">Next</button>
+          <button id="tour-skip" class="secondary" type="button">Skip tour</button>
+        </div>
+      </section>
+    </div>
 
     <script
       src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"

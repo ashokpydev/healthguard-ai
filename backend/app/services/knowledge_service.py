@@ -1,4 +1,5 @@
 from backend.app.schemas.health import KnowledgeSource
+from backend.app.services.rag_service import RAGService
 
 
 APPROVED_KNOWLEDGE = [
@@ -22,7 +23,12 @@ APPROVED_KNOWLEDGE = [
 
 
 class KnowledgeService:
-    def retrieve(self, query: str | None) -> list[KnowledgeSource]:
+    def retrieve(self, query: str | None, user_id: int | None = None) -> list[KnowledgeSource]:
+        rag = RAGService()
+        rag.seed_global_knowledge(APPROVED_KNOWLEDGE)
+        rag_sources = rag.retrieve(query, user_id=user_id)
+        if rag_sources:
+            return rag_sources
         if not query:
             return APPROVED_KNOWLEDGE[:3]
         query_lower = query.lower()

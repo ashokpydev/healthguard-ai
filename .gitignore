@@ -9,9 +9,11 @@ venv/
 node_modules/
 dist/
 build/
+outputs/
 .DS_Store
 *.log
 data/*.db
 data/*.db-*
+data/mimic-iv-demo/
 .healthguard_data/
 .test_data/

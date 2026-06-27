@@ -112,6 +112,10 @@ class HealthReport(BaseModel):
     risk_summary: RiskSummary
     possible_health_concerns_to_discuss_with_doctor: list[str]
     precautions: list[str]
+    diet_plan: list[str] = Field(default_factory=list)
+    wellness_recommendations: list[str] = Field(default_factory=list)
+    physical_activity_plan: list[str] = Field(default_factory=list)
+    doctor_department_guidance: list[str] = Field(default_factory=list)
     doctor_consultation_required: bool
     emergency_warning: bool
     red_flags: list[str]
@@ -239,6 +243,14 @@ class KnowledgeUploadRequest(BaseModel):
 
 
 class DoctorReviewRequest(BaseModel):
-    status: Literal["reviewed", "approved", "rejected", "modified"]
+    status: Literal["assigned", "in_review", "needs_patient_followup", "escalated", "reviewed", "approved", "rejected", "modified", "closed"]
     comments: str | None = None
     final_clinical_notes: str | None = None
+    clinician_signature: str | None = None
+    review_priority: Literal["routine", "priority", "urgent"] = "routine"
+    escalation_reason: str | None = None
+
+
+class DoctorAssignmentRequest(BaseModel):
+    reviewer_id: int | None = None
+    priority: Literal["routine", "priority", "urgent"] = "routine"

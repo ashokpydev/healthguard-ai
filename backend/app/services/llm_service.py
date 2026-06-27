@@ -31,18 +31,27 @@ class LLMService:
         }
 
     def configured(self) -> bool:
-        return os.getenv("LLM_TEST_MODE") == "1" or bool(os.getenv(self._api_key_name()))
+        return os.getenv("LLM_TEST_MODE") == "1" or bool(self._api_key_value())
 
     def _api_key_name(self) -> str:
         if self.provider == "gemini":
             return "GEMINI_API_KEY"
         if self.provider == "openai":
             return "OPENAI_API_KEY"
+        if self.provider in {"huggingface", "hf"}:
+            return "HF_TOKEN"
         return f"{self.provider.upper()}_API_KEY"
+
+    def _api_key_value(self) -> str:
+        if self.provider in {"huggingface", "hf"}:
+            return os.getenv("HF_TOKEN") or os.getenv("HUGGINGFACE_API_KEY") or ""
+        return os.getenv(self._api_key_name(), "")
 
     def _model_for_provider(self) -> str:
         if self.provider == "gemini":
             return os.getenv("GEMINI_MODEL", "gemini-2.5-flash").strip()
+        if self.provider in {"huggingface", "hf"}:
+            return os.getenv("HUGGINGFACE_MODEL", "openai/gpt-oss-120b:cerebras").strip()
         return os.getenv("OPENAI_MODEL", "gpt-4.1-mini").strip()
 
     def enhance_report(self, request: AssessmentRequest, base_report: dict, sources: list[KnowledgeSource]) -> dict:
@@ -152,6 +161,8 @@ class LLMService:
     def _responses_json(self, system: str, user: str, schema: dict, schema_name: str) -> dict:
         if self.provider == "gemini":
             return self._gemini_json(system, user, schema)
+        if self.provider in {"huggingface", "hf"}:
+            return self._huggingface_json(system, user, schema, schema_name)
         if self.provider != "openai":
             raise RuntimeError(f"Unsupported LLM_PROVIDER: {self.provider}")
         payload = {
@@ -186,7 +197,45 @@ class LLMService:
             raise RuntimeError(f"OpenAI API error {exc.code}: {detail}") from exc
         except urllib.error.URLError as exc:
             raise RuntimeError(f"OpenAI API connection failed: {exc}") from exc
-        return json.loads(self._extract_text(data))
+        return self._load_json_output(self._extract_text(data))
+
+    def _huggingface_json(self, system: str, user: str, schema: dict, schema_name: str) -> dict:
+        payload = {
+            "model": self.model,
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+            "temperature": 0.2,
+            "max_tokens": int(os.getenv("HUGGINGFACE_MAX_TOKENS", "900") or "900"),
+            "response_format": {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": schema_name,
+                    "schema": schema,
+                    "strict": True,
+                },
+            },
+        }
+        request = urllib.request.Request(
+            os.getenv("HUGGINGFACE_BASE_URL", "https://router.huggingface.co/v1").rstrip("/") + "/chat/completions",
+            data=json.dumps(payload).encode("utf-8"),
+            headers={
+                "Authorization": f"Bearer {self._api_key_value()}",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=self.timeout) as response:
+                data = json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            detail = exc.read().decode("utf-8", errors="ignore")
+            raise RuntimeError(self._format_http_error("Hugging Face", exc.code, detail)) from exc
+        except urllib.error.URLError as exc:
+            raise RuntimeError(f"Hugging Face API connection failed: {exc}") from exc
+        self.active_model = data.get("model") or self.model
+        return self._load_json_output(self._extract_text(data))
 
     def _gemini_json(self, system: str, user: str, schema: dict) -> dict:
         payload = {
@@ -217,7 +266,7 @@ class LLMService:
                     with urllib.request.urlopen(request, timeout=self.timeout) as response:
                         data = json.loads(response.read().decode("utf-8"))
                     self.active_model = model
-                    return json.loads(self._extract_text(data))
+                    return self._load_json_output(self._extract_text(data))
                 except urllib.error.HTTPError as exc:
                     detail = exc.read().decode("utf-8", errors="ignore")
                     last_error = self._format_http_error("Gemini", exc.code, detail)
@@ -291,7 +340,27 @@ class LLMService:
             for part in candidate.get("content", {}).get("parts", []):
                 if part.get("text"):
                     return part["text"]
+        for choice in data.get("choices", []):
+            message = choice.get("message") or {}
+            content = message.get("content")
+            if isinstance(content, str) and content:
+                return content
+            if isinstance(content, list):
+                text = "".join(part.get("text", "") for part in content if isinstance(part, dict))
+                if text:
+                    return text
         raise RuntimeError(f"{self.provider.title()} response did not contain output text.")
+
+    def _load_json_output(self, text: str) -> dict:
+        cleaned = text.strip()
+        if cleaned.startswith("```"):
+            cleaned = cleaned.strip("`").strip()
+            if cleaned.lower().startswith("json"):
+                cleaned = cleaned[4:].strip()
+        try:
+            return json.loads(cleaned)
+        except json.JSONDecodeError as exc:
+            raise RuntimeError(f"{self.provider.title()} response was not valid JSON: {cleaned[:500]}") from exc
 
     def _test_report_response(self, request: AssessmentRequest, base_report: dict) -> dict:
         return {

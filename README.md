@@ -19,6 +19,7 @@ HealthGuard AI is not a doctor and does not provide diagnosis, prescriptions, do
 - Personalized report JSON saved for history/review
 - PDF report download endpoint
 - Document upload placeholder with lab-report disclaimer
+- Persistent RAG pipeline with document chunking, local embeddings, semantic retrieval, and per-patient isolation
 - Doctor review demo workflow
 - Admin knowledge upload and audit-log APIs
 - Living implementation tracker in [docs/TRACK.md](docs/TRACK.md)
@@ -99,14 +100,27 @@ For Gmail, enable 2-Step Verification and create an App Password. Use the App Pa
 
 SSO endpoints are scaffolded for Google, Facebook, and Instagram. Live SSO requires provider app credentials such as `GOOGLE_CLIENT_ID`, `FACEBOOK_CLIENT_ID`, or `INSTAGRAM_CLIENT_ID` plus the matching provider secrets and callback configuration.
 
-## Gemini LLM
+## LLM Provider
 
-HealthGuard AI uses Gemini for live report and chat enhancement. Add a Gemini API key to `.env`:
+HealthGuard AI can use Gemini, Hugging Face Inference Providers, or OpenAI for live report and chat enhancement.
+
+Gemini example:
 
 ```bash
 LLM_PROVIDER=gemini
 GEMINI_API_KEY=your-gemini-api-key
 GEMINI_MODEL=gemini-2.5-flash
+LLM_TIMEOUT_SECONDS=25
+```
+
+Hugging Face example:
+
+```bash
+LLM_PROVIDER=huggingface
+HF_TOKEN=your-hugging-face-token
+HUGGINGFACE_MODEL=openai/gpt-oss-120b:cerebras
+HUGGINGFACE_BASE_URL=https://router.huggingface.co/v1
+HUGGINGFACE_MAX_TOKENS=900
 LLM_TIMEOUT_SECONDS=25
 ```
 
@@ -116,7 +130,20 @@ Restart the app after changing `.env`, then check:
 GET /api/health/llm
 ```
 
-If `GEMINI_API_KEY` is empty, the app safely falls back to rule-based report generation.
+Report generation is fail-closed: if the selected live LLM provider is missing credentials or fails, no report is created or saved. Chat can still fall back to the guarded educational answer.
+
+## RAG Pipeline
+
+HealthGuard AI indexes uploaded patient documents and approved internal knowledge into local database-backed RAG tables:
+
+- `rag_documents` stores document metadata and ownership.
+- `rag_chunks` stores chunk text plus local embedding vectors.
+- Patient uploads are indexed under that patient's user ID.
+- Approved admin knowledge is indexed globally.
+- Retrieval uses cosine similarity over deterministic local hashing embeddings.
+- Report and chat generation retrieve the top semantic chunks before calling Gemini.
+
+This gives the demo a complete local RAG pipeline without a separate embedding API. PostgreSQL can be used for the app database, while the current implementation stores vectors as JSON for portability.
 
 ## Tracking Rule
 

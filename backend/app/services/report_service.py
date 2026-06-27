@@ -34,7 +34,7 @@ class ReportService:
         self.knowledge = KnowledgeService()
         self.llm = LLMService()
 
-    def generate(self, request: AssessmentRequest) -> HealthReport:
+    def generate(self, request: AssessmentRequest, user_id: int | None = None) -> HealthReport:
         triage = self.triage.analyze(request.symptoms, request.question)
         risk = self.risk.score(request, len(triage.red_flags))
         precautions = [
@@ -42,11 +42,15 @@ class ReportService:
             *self.guidance.diet_precautions(request),
             *self.guidance.climate_precautions(request),
         ]
+        wellness_recommendations = self.guidance.wellness_recommendations(request)
+        physical_activity_plan = self.guidance.physical_activity_plan(request)
+        doctor_department_guidance = self.guidance.doctor_department_guidance(request)
+        diet_plan = self.guidance.diet_plan(request)
         if triage.emergency_warning and triage.message:
             precautions.insert(0, triage.message)
 
         concerns = self._concerns(request, risk.key_risk_factors)
-        sources = self.knowledge.retrieve(request.question)
+        sources = self.knowledge.retrieve(request.question, user_id=user_id)
         if request.document_context:
             sources.insert(
                 0,
@@ -68,6 +72,10 @@ class ReportService:
             "risk_summary": risk,
             "possible_health_concerns_to_discuss_with_doctor": concerns,
             "precautions": list(dict.fromkeys(precautions)),
+            "diet_plan": diet_plan,
+            "wellness_recommendations": wellness_recommendations,
+            "physical_activity_plan": physical_activity_plan,
+            "doctor_department_guidance": doctor_department_guidance,
             "doctor_consultation_required": risk.overall_risk_level in {"Moderate", "High", "Urgent"} or bool(request.symptoms),
             "emergency_warning": triage.emergency_warning,
             "red_flags": triage.red_flags,

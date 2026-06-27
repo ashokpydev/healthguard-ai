@@ -1,6 +1,7 @@
 import os
 import tempfile
 import uuid
+import json
 from pathlib import Path
 
 import pytest
@@ -12,7 +13,9 @@ os.environ["LLM_TEST_MODE"] = "1"
 from fastapi.testclient import TestClient
 
 from backend.app.main import app
+from backend.app.db.store import connect
 from backend.app.schemas.health import AssessmentRequest, HealthProfile
+from backend.app.services.llm_service import LLMService
 from backend.app.services.report_service import ReportLLMError, ReportService
 
 
@@ -97,6 +100,11 @@ def test_lifestyle_report_for_software_engineer():
     assert report["risk_summary"]["overall_risk_level"] in {"Moderate", "High"}
     assert any("Sedentary" in item for item in report["risk_summary"]["key_risk_factors"])
     assert any("movement break" in item for item in report["precautions"])
+    assert any("plate method" in item.lower() for item in report["diet_plan"])
+    assert any("sugar" in item.lower() or "processed" in item.lower() for item in report["diet_plan"])
+    assert any("meditation" in item.lower() or "breathing" in item.lower() for item in report["wellness_recommendations"])
+    assert any("cat-cow" in item.lower() or "walking" in item.lower() for item in report["physical_activity_plan"])
+    assert any("Orthopedics" in item or "General Physician" in item for item in report["doctor_department_guidance"])
     assert report["doctor_consultation_required"] is True
     assert report["generation_engine"] == "test-llm"
     assert report["llm_summary"]
@@ -107,6 +115,126 @@ def test_llm_status_reports_test_mode():
     assert response.status_code == 200
     assert response.json()["configured"] is True
     assert response.json()["test_mode"] is True
+
+
+def test_huggingface_provider_uses_chat_completions_json(monkeypatch):
+    monkeypatch.delenv("LLM_TEST_MODE", raising=False)
+    monkeypatch.setenv("LLM_PROVIDER", "huggingface")
+    monkeypatch.setenv("HF_TOKEN", "hf_test_token")
+    monkeypatch.setenv("HUGGINGFACE_MODEL", "demo/model:provider")
+
+    captured = {}
+
+    class FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback):
+            return False
+
+        def read(self):
+            return json.dumps(
+                {
+                    "model": "demo/model:provider",
+                    "choices": [
+                        {
+                            "message": {
+                                "content": json.dumps(
+                                    {
+                                        "llm_summary": "HF summary",
+                                        "additional_precautions": [],
+                                        "doctor_questions": [],
+                                        "follow_up_reminders": [],
+                                        "concerns_to_discuss": [],
+                                    }
+                                )
+                            }
+                        }
+                    ],
+                }
+            ).encode("utf-8")
+
+    def fake_urlopen(request, timeout):
+        captured["url"] = request.full_url
+        captured["authorization"] = request.headers["Authorization"]
+        captured["payload"] = json.loads(request.data.decode("utf-8"))
+        return FakeResponse()
+
+    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+
+    service = LLMService()
+    service.provider = "huggingface"
+    service.model = "demo/model:provider"
+    service.active_model = service.model
+    service._api_key_value = lambda: "hf_test_token"
+    result = service.enhance_report(
+        AssessmentRequest(
+            profile=HealthProfile(**profile()),
+            symptoms=[],
+            question="I feel tired.",
+            consent_to_process_health_data=True,
+        ),
+        {
+            "risk_summary": type(
+                "Risk",
+                (),
+                {"overall_risk_level": "Moderate", "risk_score": 46, "key_risk_factors": ["Short sleep duration"]},
+            )(),
+            "possible_health_concerns_to_discuss_with_doctor": [],
+            "precautions": [],
+            "emergency_warning": False,
+            "red_flags": [],
+        },
+        [],
+    )
+
+    assert captured["url"] == "https://router.huggingface.co/v1/chat/completions"
+    assert captured["authorization"] == "Bearer hf_test_token"
+    assert captured["payload"]["model"] == "demo/model:provider"
+    assert captured["payload"]["response_format"]["type"] == "json_schema"
+    assert result["generation_engine"] == "huggingface:demo/model:provider"
+    assert result["llm_summary"] == "HF summary"
+
+    monkeypatch.setenv("LLM_TEST_MODE", "1")
+
+
+def test_voice_transcription_uses_huggingface_asr(monkeypatch):
+    monkeypatch.setenv("HF_TOKEN", "hf_voice_test")
+    monkeypatch.setenv("HUGGINGFACE_ASR_MODEL", "openai/whisper-large-v3-turbo")
+    monkeypatch.setattr("backend.app.services.speech_service.SpeechService._token", lambda self: "hf_voice_test")
+    captured = {}
+
+    class FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback):
+            return False
+
+        def read(self):
+            return json.dumps({"text": "I have headache for two days and sleep poorly."}).encode("utf-8")
+
+    def fake_urlopen(request, timeout):
+        captured["url"] = request.full_url
+        captured["authorization"] = request.headers["Authorization"]
+        captured["content_type"] = request.headers["Content-type"]
+        captured["payload"] = request.data
+        return FakeResponse()
+
+    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+    patient = register_user("patient")
+    response = client.post(
+        "/api/voice/transcribe",
+        headers={"X-Demo-Token": patient["demo_token"]},
+        files={"audio": ("voice-input.webm", b"demo-audio-bytes" * 120, "audio/webm")},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["transcript"] == "I have headache for two days and sleep poorly."
+    assert captured["url"].endswith("/openai/whisper-large-v3-turbo")
+    assert captured["authorization"] == "Bearer hf_voice_test"
+    assert captured["content_type"] == "audio/webm"
+    assert captured["payload"] == b"demo-audio-bytes" * 120
 
 
 def test_report_generation_stops_when_configured_llm_fails():
@@ -168,6 +296,86 @@ def test_optional_document_upload_feeds_report_rag_context():
     assert "Uploaded document findings that may need clinician interpretation" in report[
         "possible_health_concerns_to_discuss_with_doctor"
     ]
+
+
+def test_uploaded_file_generates_relevant_safe_suggestions_without_prescribing():
+    patient = register_user("patient")
+    upload = client.post(
+        "/api/documents/upload",
+        headers={"X-Demo-Token": patient["demo_token"]},
+        files={
+            "file": (
+                "health-condition.txt",
+                (
+                    b"Patient history: diabetes and high cholesterol. "
+                    b"HbA1c 6.8, LDL 162, Vitamin D 14. "
+                    b"Current medication: Metformin tablet. "
+                    b"No chest pain today."
+                ),
+                "text/plain",
+            )
+        },
+    )
+    assert upload.status_code == 200
+    data = upload.json()
+    assert any("HbA1c" in item for item in data["detected_topics"])
+    assert any("LDL" in item or "cholesterol" in item.lower() for item in data["detected_topics"])
+    assert any("diabetes" in item.lower() for item in data["suggested_actions"])
+    assert any("cardiovascular" in item.lower() or "lipid" in item.lower() for item in data["suggested_actions"])
+    assert any("do not start, stop, or change" in item.lower() for item in data["suggested_actions"])
+    assert not any("take metformin" in item.lower() for item in data["suggested_actions"])
+    assert "Safe suggested actions" in data["tuned_context"]
+
+
+def test_uploaded_documents_are_indexed_for_user_isolated_semantic_rag():
+    patient_a = register_user("patient")
+    patient_b = register_user("patient")
+    upload = client.post(
+        "/api/documents/upload",
+        headers={"X-Demo-Token": patient_a["demo_token"]},
+        files={
+            "file": (
+                "thyroid-note.txt",
+                b"TSH is elevated. Thyroid follow up was advised. Fatigue may need endocrine review.",
+                "text/plain",
+            )
+        },
+    )
+    assert upload.status_code == 200
+    assert "Indexed" in upload.json()["rag_summary"]
+
+    own_status = client.get("/api/health/rag", headers={"X-Demo-Token": patient_a["demo_token"]})
+    assert own_status.status_code == 200
+    assert own_status.json()["user_documents"] >= 1
+    assert own_status.json()["user_chunks"] >= 1
+
+    own_report = client.post(
+        "/api/reports/generate",
+        headers={"X-Demo-Token": patient_a["demo_token"]},
+        json={
+            "profile": profile(),
+            "symptoms": [{"name": "fatigue", "duration_days": 10, "severity": 4}],
+            "question": "Does my thyroid follow up note matter for fatigue?",
+            "consent_to_process_health_data": True,
+        },
+    )
+    assert own_report.status_code == 200
+    own_sources = own_report.json()["report"]["sources"]
+    assert any(source["source_type"] == "patient_document_rag" and "Thyroid" in source["excerpt"] for source in own_sources)
+
+    other_report = client.post(
+        "/api/reports/generate",
+        headers={"X-Demo-Token": patient_b["demo_token"]},
+        json={
+            "profile": profile(),
+            "symptoms": [{"name": "fatigue", "duration_days": 10, "severity": 4}],
+            "question": "Does my thyroid follow up note matter for fatigue?",
+            "consent_to_process_health_data": True,
+        },
+    )
+    assert other_report.status_code == 200
+    other_sources = other_report.json()["report"]["sources"]
+    assert not any(source["source_type"] == "patient_document_rag" and "Thyroid" in source["excerpt"] for source in other_sources)
 
 
 def test_structured_patient_inputs_drive_risk_factors():
@@ -334,6 +542,10 @@ def test_patient_reports_are_private_and_doctor_gets_patient_folders():
     assert other_reports.status_code == 200
     assert all(item["id"] != report_id for item in other_reports.json()["items"])
 
+    doctor_own_reports = client.get("/api/reports", headers={"X-Demo-Token": doctor["demo_token"]})
+    assert doctor_own_reports.status_code == 200
+    assert all(item["id"] != report_id for item in doctor_own_reports.json()["items"])
+
     other_download = client.get(f"/api/reports/{report_id}/download?demo_token={patient_y['demo_token']}")
     assert other_download.status_code == 404
 
@@ -486,3 +698,92 @@ def test_sso_start_scaffold_for_supported_providers():
 
     unsupported = client.get("/api/auth/sso/twitter/start")
     assert unsupported.status_code == 400
+
+
+def test_security_scan_blocks_malicious_upload_and_audit_masks_pii():
+    patient = register_user("patient")
+    blocked = client.post(
+        "/api/documents/upload",
+        headers={"X-Demo-Token": patient["demo_token"]},
+        files={"file": ("eicar.txt", b"X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!", "text/plain")},
+    )
+    assert blocked.status_code == 400
+    assert "Upload blocked by security scan" in blocked.json()["detail"]
+
+    compliance = register_user("compliance")
+    logs = client.get(
+        "/api/admin/audit-logs",
+        headers={"X-Demo-Token": compliance["demo_token"]},
+        params={"action": "documents.upload.blocked"},
+    )
+    assert logs.status_code == 200
+    item = logs.json()["items"][0]
+    assert item["event_hash"]
+    assert item["immutable"] == 1
+    assert "sha256" in item["metadata_json"]
+
+    export = client.get(
+        "/api/admin/audit-logs/export",
+        headers={"X-Demo-Token": compliance["demo_token"]},
+        params={"format": "csv", "action": "documents.upload.blocked"},
+    )
+    assert export.status_code == 200
+    assert export.headers["content-type"].startswith("text/csv")
+
+
+def test_doctor_assignment_lifecycle_signature_history_and_pdf_metadata():
+    patient = register_user("patient")
+    doctor = register_user("doctor")
+    generated = client.post(
+        "/api/reports/generate",
+        headers={"X-Demo-Token": patient["demo_token"]},
+        json={
+            "profile": profile(name="Lifecycle Patient"),
+            "symptoms": [{"name": "fatigue", "duration_days": 5, "severity": 5}],
+            "question": "I feel tired and sleep poorly.",
+            "consent_to_process_health_data": True,
+        },
+    )
+    assert generated.status_code == 200
+    report_id = generated.json()["report_id"]
+
+    with connect() as conn:
+        raw = conn.execute("SELECT report_json FROM reports WHERE id = ?", (report_id,)).fetchone()["report_json"]
+    assert raw.startswith("enc:v1:")
+
+    assigned = client.post(
+        f"/api/doctor/reports/{report_id}/assign",
+        headers={"X-Demo-Token": doctor["demo_token"]},
+        json={"priority": "priority"},
+    )
+    assert assigned.status_code == 200
+    assert assigned.json()["assigned_reviewer_id"] == doctor["id"]
+    assert assigned.json()["doctor_review_status"] == "assigned"
+
+    reviewed = client.post(
+        f"/api/doctor/reports/{report_id}/review",
+        headers={"X-Demo-Token": doctor["demo_token"]},
+        json={
+            "status": "escalated",
+            "comments": "Needs clinician follow-up.",
+            "final_clinical_notes": "Schedule review.",
+            "clinician_signature": "Dr Demo",
+            "review_priority": "urgent",
+            "escalation_reason": "Persistent symptoms with elevated risk score.",
+        },
+    )
+    assert reviewed.status_code == 200
+    body = reviewed.json()
+    assert body["doctor_review_status"] == "escalated"
+    assert body["clinician_signature"] == "Dr Demo"
+    assert body["review_priority"] == "urgent"
+    assert len(body["review_history"]) >= 2
+
+    history = client.get(f"/api/doctor/reports/{report_id}/history", headers={"X-Demo-Token": doctor["demo_token"]})
+    assert history.status_code == 200
+    assert history.json()["items"][-1]["to_status"] == "escalated"
+
+    pdf = client.get(f"/api/reports/{report_id}/download?demo_token={patient['demo_token']}")
+    assert pdf.status_code == 200
+    assert b"DOCTOR REVIEW METADATA" in pdf.content
+    assert b"Dr Demo" in pdf.content

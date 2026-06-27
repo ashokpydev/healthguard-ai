@@ -13,9 +13,9 @@ class ChatService:
         self.safety = SafetyService()
         self.triage = TriageService()
 
-    def answer(self, request: ChatRequest) -> ChatResponse:
+    def answer(self, request: ChatRequest, user_id: int | None = None) -> ChatResponse:
         triage = self.triage.analyze([], request.question)
-        sources = self.knowledge.retrieve(request.question)
+        sources = self.knowledge.retrieve(request.question, user_id=user_id)
         question_lower = request.question.lower()
 
         if any(term in question_lower for term in ["which antibiotic", "what antibiotic", "medicine should i take", "tablet should i take"]):

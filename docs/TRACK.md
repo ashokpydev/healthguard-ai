@@ -13,6 +13,373 @@ This document is the running implementation record for HealthGuard AI. Update it
 
 ## Update Log
 
+### 2026-06-27 - User-specific saved reports view
+
+Implemented:
+
+- Updated `/api/reports` to return only reports owned by the logged-in account.
+- Kept doctor/dietician patient queues separated under `/api/doctor/reports/pending`.
+- Removed patient-facing Approve action from Saved reports.
+- Added a Saved reports privacy note explaining that the list is account-specific.
+
+Verified:
+
+- Added regression coverage proving a doctor's regular Saved reports endpoint does not expose another patient's report.
+- `python -m pytest` passed with 25 tests.
+- `node --check frontend\app.js` passed.
+
+### 2026-06-26 - Structured diet plan suggestions
+
+Implemented:
+
+- Added a dedicated `diet_plan` section to generated reports.
+- Added practical meal-structure guidance: plate method, meal timing, protein, fiber, hydration, and foods to prefer/limit.
+- Added condition-aware diet guidance for sugar/metabolic risk, BP/heart/lipid risk, kidney concerns, acidity/reflux, fever/weakness, and hot-weather hydration.
+- Updated frontend report rendering and PDF downloads to include the diet plan.
+
+Verified:
+
+- `python -m pytest` passed with 25 tests.
+- `node --check frontend\app.js` passed.
+
+### 2026-06-26 - Improved wellness, activity, and doctor guidance
+
+Implemented:
+
+- Added structured report sections for feel-better precautions, physical activity plan, and which doctor/department to consult.
+- Added rule-based wellness guidance for fever/infection symptoms, stress/sleep issues, metabolic risk, hydration, rest, and self-medication safety.
+- Added problem-specific activity suggestions for desk-work strain, metabolic risk, stress/sleep, breathing concerns, fever/acute illness, and emergency red flags.
+- Added department routing for General Physician/Internal Medicine, Cardiology, Endocrinology, Pulmonology, Orthopedics/Physiotherapy, Gastroenterology, Nephrology/Urology, Dermatology, Ophthalmology, Psychiatry/Psychology/Sleep Medicine, Gynecology, and Dentistry.
+- Updated the report UI and PDF output to show these sections.
+
+Verified:
+
+- `python -m pytest` passed with 25 tests.
+- `node --check frontend\app.js` passed.
+
+### 2026-06-26 - One-time uploaded document context
+
+Implemented:
+
+- Fixed stale uploaded-file data reappearing from browser `localStorage`.
+- Scoped uploaded document context by logged-in user instead of using one shared browser key.
+- Cleared uploaded document context after a successful report generation because uploads are meant to support only the next report.
+- Cleared user-specific uploaded document context on logout/session switch.
+
+Verified:
+
+- `node --check frontend\app.js` passed.
+
+### 2026-06-26 - Doctor patient-problem monitor
+
+Implemented:
+
+- Added doctor-facing report metadata for patient problem summary, top risk factors, suggested doctor questions, and uploaded-document context.
+- Updated patient folder cards so doctors can see the patient problem directly in the monitor view before opening the PDF.
+- Added compact clinical styling for the patient problem area in doctor report folders.
+- Added a local Chrome DevTools capture utility for doctor monitor screenshots.
+
+Verified:
+
+- `python -m pytest` passed with 25 tests.
+- `node --check frontend\app.js` passed.
+- `node --check scripts\capture_doctor_monitor_screenshot.mjs` passed.
+- Captured doctor patient-problem screenshots in `outputs/doctor-patient-problem.png` and `outputs/doctor-patient-problem-focused.png`.
+
+### 2026-06-26 - Uploaded-file relevant suggestions
+
+Implemented:
+
+- Enhanced document upload processing to extract structured health signals from patient files.
+- Added detected topics for common labs, conditions, medication mentions, and emergency terms.
+- Added safe relevant suggestions based on uploaded findings, including diabetes/glucose, lipid, thyroid, kidney, hemoglobin/anemia, vitamin D, and emergency-symptom review.
+- Added doctor-question generation from uploaded file findings.
+- Added medication-safety handling so uploaded medication mentions produce clinician-review guidance, not prescriptions or dose changes.
+- Added safety alerts for emergency terms found in uploaded files.
+- Added uploaded-file suggestions into `tuned_context` so RAG/chat/report generation receives the safer structured interpretation.
+- Updated the frontend document panel to display extracted summary, safety alerts, detected topics, relevant suggestions, and doctor questions after upload.
+
+Verified:
+
+- Added regression coverage proving uploaded lab/condition content produces relevant suggestions and does not prescribe medication.
+- `python -m pytest` passed with 25 tests.
+- `node --check frontend\app.js` passed.
+- Backend AST syntax check passed.
+
+### 2026-06-26 - MIMIC-IV demo RAG ingestion
+
+Implemented:
+
+- Added `scripts/ingest_mimic_iv_demo_rag.py` to download MIMIC-IV Clinical Database Demo 2.2 files from PhysioNet.
+- Added resilient streaming download with retries and `.part` cleanup support.
+- Added curated default ingestion for useful clinical/demo tables, with optional `--all` mode for full official-file download.
+- Added `--no-download` mode to index already-downloaded official files when the network is unreliable.
+- Indexed MIMIC table summaries as global RAG knowledge using source type `mimic_iv_demo_approved_public_dataset`.
+- Summaries include table purpose, row counts, columns, common admission categories, diagnosis concepts, procedure concepts, lab concepts, microbiology concepts, OMR data, README, and license text.
+- Avoided indexing every raw patient event row as an individual vector; the RAG receives safe, bounded summaries for retrieval.
+- Added `data/mimic-iv-demo/` to `.gitignore` so downloaded dataset artifacts stay local.
+
+Verified:
+
+- Downloaded and indexed 16 official MIMIC-IV demo files that completed successfully.
+- Added 16 MIMIC RAG documents and 38 RAG chunks.
+- RAG status now reports 20 total documents and 42 total chunks including existing internal guidance.
+- Verified retrieval returns MIMIC admissions, lab, diagnosis, README, and license context for a clinical query.
+
+### 2026-06-26 - First-login application tour
+
+Implemented:
+
+- Added a guided application tour modal for first successful login/email verification.
+- Added per-user local storage tracking so the tour appears once per user.
+- Added a dashboard `Tour` menu button so users can reopen the walkthrough anytime.
+- Added six guided steps covering workspace purpose, assessment, voice intake, document upload, report generation, saved reports, and clinician workflow.
+- Added section scrolling and visual highlighting for the active tour step.
+- Added tour navigation controls: Previous, Next/Finish, Skip, close button, backdrop close, and Escape key close.
+- Closed the tour safely on logout.
+
+Verified:
+
+- `node --check frontend\app.js` passed.
+- `python -m pytest` passed with 24 tests.
+
+### 2026-06-26 - Hugging Face LLM provider
+
+Implemented:
+
+- Added Hugging Face Inference Providers support as a live LLM provider.
+- Added `LLM_PROVIDER=huggingface` / `LLM_PROVIDER=hf` routing in `LLMService`.
+- Added `HF_TOKEN` and `HUGGINGFACE_API_KEY` credential support.
+- Added `HUGGINGFACE_MODEL`, `HUGGINGFACE_BASE_URL`, and `HUGGINGFACE_MAX_TOKENS` configuration.
+- Used the OpenAI-compatible Hugging Face chat-completions endpoint at `/chat/completions`.
+- Preserved the existing JSON-schema response contract for report generation and chatbot answers.
+- Added robust JSON extraction for Hugging Face `choices[].message.content` responses.
+- Updated `.env.example` and README with Hugging Face configuration.
+- Added Hugging Face ASR/Whisper speech transcription service for voice input.
+- Added `/api/health/speech` to inspect speech transcription configuration.
+- Added `/api/voice/transcribe` to receive recorded browser audio and return a transcript.
+- Changed the voice UI to prefer local browser audio recording with `MediaRecorder`, then server-side Hugging Face transcription, avoiding browser speech-service network failures.
+- Preserved the old browser SpeechRecognition path as a fallback when MediaRecorder is unavailable.
+- After transcription, the UI automatically sends the transcript through the existing chat/RAG flow and reads the answer aloud.
+- Added Hugging Face ASR retry handling for transient 429/5xx/network/model-loading failures.
+- Added configurable ASR fallback models with `HUGGINGFACE_ASR_FALLBACK_MODELS`.
+- Added `X-Wait-For-Model` on ASR requests to reduce cold-start failures.
+- Added minimum audio-size validation and frontend minimum recording-duration guidance to avoid intermittent empty/too-short recordings.
+
+Verified:
+
+- Added a mocked Hugging Face provider regression test that validates endpoint, bearer token, model, JSON schema payload, and parsed output.
+- Added a mocked Hugging Face ASR regression test for `/api/voice/transcribe`.
+- `python -m pytest` passed with 24 tests.
+- `node --check frontend\app.js` passed.
+- Backend AST syntax check passed with `python -B`.
+
+### 2026-06-25 - Voice assistant intake and read-aloud response
+
+Implemented:
+
+- Added a Voice menu item and dashboard voice assistant panel.
+- Added microphone controls for start, stop, submit, read answer, and clear.
+- Added browser speech-recognition support using the Web Speech API.
+- Extracted common spoken patient details into the assessment form when fields are empty, including age, height, weight, sleep hours, location, climate, smoking, alcohol, diet pattern, symptom, severity, and duration.
+- Sent the cleaned transcript through the existing authenticated chat endpoint, which uses safety checks and supporting knowledge/RAG retrieval.
+- Included uploaded document context in the voice question when a patient has attached a document.
+- Added browser text-to-speech playback for the generated answer.
+- Added safe output escaping for voice transcript, answer, sources, and disclaimer rendering.
+- Hardened microphone capture with explicit browser microphone permission preflight.
+- Added clearer voice-recognition error messages for blocked permission, missing microphone, no speech, network/service blocks, and unsupported browsers.
+- Added a typed-transcript fallback path so patients can still submit the voice text manually if browser speech capture is blocked.
+
+Verified:
+
+- `node --check frontend\app.js` passed.
+- `python -m pytest` passed with 22 tests.
+
+### 2026-06-25 - PDF, clinical workflow, audit, and security hardening
+
+Implemented:
+
+- Replaced the basic one-page PDF output with a branded, multi-section report export.
+- Added PDF section formatting, footer pagination, risk-score chart text, evidence sources, disclaimer, and doctor-review metadata.
+- Added clinician review workflow fields for assigned reviewer, priority, lifecycle status, clinician signature, escalation reason, and review history.
+- Added doctor APIs for report assignment and review-history retrieval.
+- Expanded doctor review updates to persist comments, clinical notes, signatures, priority, escalation reasons, timestamps, and lifecycle history.
+- Added additive SQLite/PostgreSQL schema migration columns for clinical workflow and compliance metadata.
+- Added PHI encryption at rest for stored patient profiles, assessments, and report JSON, with backward-compatible decryption on read.
+- Added audit PII masking, user/IP/user-agent metadata, immutable marker, retention date, previous-hash chaining, and event hashes.
+- Added filtered audit log retrieval and CSV/JSON audit export.
+- Added upload security scanning for size limits, unsupported/executable file types, executable signatures, and the EICAR antivirus test signature.
+- Added rate limiting for registration, login, confirmation resend, report generation, and document upload.
+- Added secure session-cookie issuance plus a CSRF token endpoint; cookie-authenticated writes are guarded when cookie auth is explicitly enabled.
+
+Verified:
+
+- Added regression coverage for blocked upload scanning, audit hash/metadata/export behavior, PHI encryption at rest, doctor assignment, status lifecycle, signatures, escalation, review history, and PDF review metadata.
+- `python -m pytest` passed with 22 tests.
+- `node --check frontend\app.js` passed.
+- Backend AST syntax check passed with `python -B`.
+
+### 2026-06-25 - Figma architecture diagram
+
+Implemented:
+
+- Created an editable FigJam architecture diagram for HealthGuard AI.
+- Diagram covers the web UI, FastAPI routes, auth/RBAC, report generation, document extraction, RAG retrieval, doctor review, admin/audit, PDF export, PostgreSQL/SQLite, RAG tables, reports/assessments, audit logs, Gemini, SMTP, Google OAuth, and optional future file-processing jobs.
+- Added a more complete senior-level end-to-end architecture flow to the same FigJam file after review feedback.
+- The detailed flow now covers user entry points, API layer, registration/email verification/SSO, session and role guards, patient intake validation, optional document upload, RAG extraction/chunking/embedding/retrieval, deterministic safety rules, Gemini prompt/response/failure path, report persistence, saved reports, PDF export, doctor review, admin knowledge, and compliance audit access.
+- Added a corrected end-to-end architecture diagram after checking the FigJam readback and identifying missing/unclear connections.
+- The corrected diagram explicitly connects SMTP confirmation, Google OAuth token exchange, verified session creation, dashboard unlock, mandatory intake validation, profile persistence, document upload to patient RAG chunks, admin knowledge to global RAG indexing, Gemini success/failure paths, report/audit persistence, saved reports, PDF download, doctor review updates, compliance audit view, and health-check dependencies.
+- Removed old/duplicate FigJam diagrams and regenerated a single clean current architecture diagram.
+- Replaced the board with a final full architecture diagram using `Complete ...` sections and removed remaining previous diagram sections.
+- Removed all previous FigJam content and created a fresh end-to-end flow diagram from an empty board.
+- The fresh diagram is organized into 11 numbered sections: users, frontend, FastAPI routes, authentication/authorization, patient intake, document/RAG ingestion, safety/report engine, retrieval/LLM, database persistence, external services, and outputs/operations.
+
+Verified:
+
+- Generated successfully in Figma/FigJam using the architecture diagram layout.
+- Generated the detailed end-to-end flow successfully in Figma/FigJam.
+- Verified the corrected FigJam diagram readback includes the key missing connection paths.
+- Verified the FigJam board now contains only the `Current ...` architecture sections and active connectors for the final diagram.
+- Verified the FigJam board now contains only the `Complete ...` architecture sections with active connector lines for the full architecture diagram.
+- Verified the FigJam board was cleared first and now contains only the fresh numbered end-to-end flow with active connector lines.
+- Figma link: `https://www.figma.com/board/s9W4ClPD6VDAPzDeK4RRgK`
+
+### 2026-06-25 - Client architecture presentation
+
+Implemented:
+
+- Added `scripts/generate_client_presentation.py` to generate a reusable client-demo PowerPoint deck.
+- Created `outputs/HealthGuard_AI_Client_Architecture_Demo.pptx` with 20 slides covering product overview, system architecture, backend layers, authentication, roles, assessment data, report generation, RAG, Gemini integration, database design, privacy, API surface, document extraction, testing, deployment, security, and roadmap.
+- Embedded the HealthGuard AI logo and included editable architecture/flow diagrams using PowerPoint shapes and connector lines.
+
+Verified:
+
+- Generated PPTX successfully with 20 slides.
+- Validated required PPTX package parts, slide XML parsing, and embedded logo presence.
+
+### 2026-06-25 - Interview guide PDF export
+
+Implemented:
+
+- Created `docs/HealthGuard_AI_Interview_Guide.pdf` from `docs/INTERVIEW_GUIDE.md`.
+- Exported the senior engineering interview guide as an 11-page PDF with headings, bullets, code blocks, and page footers.
+
+Verified:
+
+- Confirmed the file has a valid PDF header and EOF marker.
+- Confirmed `pypdf` can read all 11 pages and extract first-page text.
+
+### 2026-06-25 - Senior engineer interview documentation
+
+Implemented:
+
+- Added `docs/INTERVIEW_GUIDE.md` with senior software engineer interview explanations.
+- Covered architecture, modules, authentication, roles, RAG, LLM, report generation, database design, privacy, testing, limitations, production improvements, and cross-question answers.
+
+Verified:
+
+- Documentation created in the project docs folder.
+
+### 2026-06-25 - Wide dashboard space usage
+
+Implemented:
+
+- Expanded the authenticated dashboard shell from a narrow max width to a wider `1680px` workspace.
+- Adjusted assessment/documents column sizing to use wide screens more effectively.
+- Stretched the right-side documents and saved-reports stack so it fills vertical space beside the assessment form.
+- Gave Saved reports a larger flexible panel area.
+
+Verified:
+
+- `node --check frontend\app.js` passed.
+- `python -m pytest` passed with 20 tests.
+- Confirmed the running stylesheet serves the wider shell and stretched grid rules.
+
+### 2026-06-25 - Complete local RAG pipeline
+
+Implemented:
+
+- Added persistent RAG tables for documents and chunks.
+- Added document chunking with overlap.
+- Added deterministic local embedding generation.
+- Added cosine similarity semantic retrieval and chunk ranking.
+- Indexed uploaded patient documents into per-user RAG storage.
+- Indexed approved internal knowledge as global RAG context.
+- Connected report and chat generation to semantic RAG retrieval.
+- Added `/api/health/rag` to report RAG status, vector store, embedding provider, and chunk counts.
+- Preserved per-patient document isolation so one patient's uploaded context is not retrieved for another patient.
+
+Verified:
+
+- Added regression coverage proving uploaded documents are indexed, retrieved semantically, and isolated per patient.
+- `python -m pytest` passed with 20 tests.
+- Backend syntax check passed.
+- `node --check frontend\app.js` passed.
+
+### 2026-06-25 - Google SSO token endpoint connectivity check
+
+Implemented:
+
+- Added `/api/health/google-sso` to verify Google SSO configuration without exposing secrets.
+- Health check reports client ID presence, client secret presence, redirect URI, and Google token endpoint reachability.
+- Restarted the app with outbound network access so the callback can exchange OAuth codes with Google.
+
+Verified:
+
+- `python -m pytest` passed with 19 tests.
+- Backend syntax check passed.
+- `/api/health/google-sso` reports `configured: true` and `token_endpoint_reachable: true`.
+- `/api/auth/sso/google/start` returns a Google authorization URL.
+
+### 2026-06-24 - Google SSO configuration reload fix
+
+Implemented:
+
+- Added targeted SSO environment reload so Google client ID, secret, and redirect URI are read from `.env`.
+- Avoided broad `.env` override so SMTP/test environment behavior remains intact.
+- Restarted the app so the updated Google SSO configuration is active.
+
+Verified:
+
+- `python -m pytest` passed with 19 tests.
+- Backend syntax check passed.
+- `/api/auth/sso/google/start` now returns `configured: true` and a Google authorization URL.
+
+### 2026-06-24 - Google SSO callback implementation
+
+Implemented:
+
+- Added real Google OAuth callback support when `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_REDIRECT_URI` are configured.
+- Added Google token exchange and userinfo lookup using the configured OAuth credentials.
+- Added local SSO user creation/update with verified email and demo session creation.
+- Added callback handoff page that stores the demo session and redirects back to the app.
+- Updated `.env.example` and local `.env` with explicit SSO client secret and redirect URI keys.
+- Improved unconfigured Google SSO response to include the required callback URL.
+
+Verified:
+
+- `python -m pytest` passed with 19 tests.
+- Backend syntax check passed.
+- `node --check frontend\app.js` passed.
+- Restarted the app on `http://127.0.0.1:8001`.
+- Confirmed Google SSO start reports missing `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_REDIRECT_URI` while credentials are blank.
+
+### 2026-06-24 - Hide role tools for patients
+
+Implemented:
+
+- Marked Role tools navigation, hero shortcut, and role panel as role-only UI.
+- Hid role-only UI for patient users after login.
+- Kept Role tools visible for doctor, dietician, admin, and compliance users.
+- Updated patient dashboard subtitle to focus on assessment, documents, and own saved reports.
+- Added a guard so hidden role-only scroll targets cannot be activated.
+
+Verified:
+
+- `node --check frontend\app.js` passed.
+- `python -m pytest` passed with 19 tests.
+- Confirmed served HTML includes role-only markers.
+
 ### 2026-06-24 - Patient report privacy and doctor folders
 
 Implemented:

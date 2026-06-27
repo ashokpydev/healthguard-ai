@@ -10,6 +10,16 @@ const resendConfirmationButton = document.querySelector("#resend-confirmation");
 const verificationModal = document.querySelector("#verification-modal");
 const closeVerificationModalButton = document.querySelector("#close-verification-modal");
 const verificationCopy = document.querySelector("#verification-copy");
+const tourModal = document.querySelector("#tour-modal");
+const openTourButton = document.querySelector("#open-tour");
+const closeTourButton = document.querySelector("#close-tour");
+const tourTitle = document.querySelector("#tour-title");
+const tourCopy = document.querySelector("#tour-copy");
+const tourVisual = document.querySelector("#tour-visual");
+const tourProgress = document.querySelector("#tour-progress");
+const tourPrevButton = document.querySelector("#tour-prev");
+const tourNextButton = document.querySelector("#tour-next");
+const tourSkipButton = document.querySelector("#tour-skip");
 const homeTitle = document.querySelector("#home-title");
 const homeSubtitle = document.querySelector("#home-subtitle");
 const reportsPanel = document.querySelector("#reports-panel");
@@ -21,6 +31,7 @@ const loadRoleData = document.querySelector("#load-role-data");
 const roleOutput = document.querySelector("#role-output");
 const roleToolsTitle = document.querySelector("#role-tools-title");
 const knowledgeForm = document.querySelector("#knowledge-form");
+const roleOnlyElements = document.querySelectorAll(".role-only");
 const documentForm = document.querySelector("#document-form");
 const documentFile = document.querySelector("#document-file");
 const documentStatus = document.querySelector("#document-status");
@@ -29,14 +40,70 @@ const foodGroupSelect = document.querySelector("#food-group");
 const foodItemSelect = document.querySelector("#food-item");
 const addFoodButton = document.querySelector("#add-food");
 const selectedFoodsPanel = document.querySelector("#selected-foods");
+const voiceStartButton = document.querySelector("#voice-start");
+const voiceStopButton = document.querySelector("#voice-stop");
+const voiceSubmitButton = document.querySelector("#voice-submit");
+const voiceReadButton = document.querySelector("#voice-read");
+const voiceClearButton = document.querySelector("#voice-clear");
+const voiceTranscript = document.querySelector("#voice-transcript");
+const voiceStatus = document.querySelector("#voice-status");
+const voicePill = document.querySelector("#voice-pill");
 let lastReportId = null;
 let savedReports = [];
 let savedReportsPage = 1;
 const savedReportsPageSize = 5;
 let currentUser = JSON.parse(localStorage.getItem("healthguardUser") || "null");
 let pendingVerificationEmail = localStorage.getItem("healthguardPendingEmail") || "";
-let uploadedDocumentContext = JSON.parse(localStorage.getItem("healthguardDocumentContext") || "null");
+let uploadedDocumentContext = null;
 let selectedFoods = [];
+let voiceRecognition = null;
+let lastVoiceAnswer = "";
+let voiceFinalTranscript = "";
+let voiceManualStop = false;
+let voiceMediaRecorder = null;
+let voiceAudioChunks = [];
+let voiceAudioStream = null;
+let voiceRecordingStartedAt = 0;
+let tourStepIndex = 0;
+
+const tourSteps = [
+  {
+    title: "Welcome to your clinical safety workspace",
+    copy: "HealthGuard AI helps patients create educational preventive-health reports with safety checks, supporting knowledge, and clear doctor-review handoff.",
+    target: "home-panel",
+    visual: "start"
+  },
+  {
+    title: "Step 1: Complete the assessment",
+    copy: "Enter mandatory demographics, lifestyle, diet, symptoms, conditions, medications, allergies, and consent. Reports are not generated from blank demo data.",
+    target: "assessment-panel",
+    visual: "assessment"
+  },
+  {
+    title: "Step 2: Use voice intake when helpful",
+    copy: "Speak symptoms or a health question. The app records audio, transcribes it with Hugging Face when configured, extracts useful fields, then sends the transcript through the safe chat flow.",
+    target: "voice-panel",
+    visual: "voice"
+  },
+  {
+    title: "Step 3: Upload optional health documents",
+    copy: "Patients can add lab notes or previous reports. Extracted content is indexed for patient-isolated supporting context and used only when generating or answering relevant questions.",
+    target: "documents-panel",
+    visual: "documents"
+  },
+  {
+    title: "Step 4: Generate and review the report",
+    copy: "The report combines structured intake, safety rules, retrieved knowledge, and the configured LLM. If the LLM fails, no report is saved.",
+    target: "reports-panel",
+    visual: "report"
+  },
+  {
+    title: "Step 5: Saved reports and clinician workflow",
+    copy: "Patients only see their own reports. Doctors and dieticians can review patient folders, assign priority, add signatures, escalate, and maintain review history.",
+    target: "history",
+    visual: "review"
+  }
+];
 
 const foodCatalog = {
   grains: ["rice", "chapati", "millets", "oats", "brown rice", "white bread", "noodles"],
@@ -77,6 +144,123 @@ function renderSelectedFoods() {
       (food, index) => `<span class="selected-chip">${food}<button type="button" aria-label="Remove ${food}" data-remove-food="${index}">x</button></span>`
     )
     .join("");
+}
+
+function setFieldValue(selector, value) {
+  const field = document.querySelector(selector);
+  if (field && value && !field.value) {
+    field.value = value;
+  }
+}
+
+function setSelectValue(selector, value) {
+  const field = document.querySelector(selector);
+  if (!field || field.value || !value) {
+    return;
+  }
+  const normalized = value.toLowerCase();
+  const option = Array.from(field.options).find((item) => item.value.toLowerCase() === normalized || item.textContent.toLowerCase() === normalized);
+  if (option) {
+    field.value = option.value;
+  }
+}
+
+function extractVoiceIntake(transcript) {
+  const text = transcript.toLowerCase();
+  const valueFor = (pattern) => {
+    const match = text.match(pattern);
+    return match ? match[1].trim() : "";
+  };
+  setFieldValue("#age", valueFor(/\b(?:i am|age is|aged)\s+(\d{1,3})\b/));
+  setFieldValue("#height", valueFor(/\bheight(?: is)?\s+(\d{2,3})\b/));
+  setFieldValue("#weight", valueFor(/\bweight(?: is)?\s+(\d{2,3})\b/));
+  setFieldValue("#sleep", valueFor(/\bsleep(?:ing)?\s+(\d{1,2}(?:\.\d)?)\s*(?:hours|hrs)?\b/));
+  setFieldValue("#location", valueFor(/\b(?:location is|live in|from)\s+([a-z ]{3,40})(?:\.|,| and | with |$)/));
+  if (text.includes("hot")) setSelectValue("#climate", "hot weather");
+  if (text.includes("humid")) setSelectValue("#climate", "humid weather");
+  if (text.includes("cold")) setSelectValue("#climate", "cold weather");
+  if (text.includes("pollution")) setSelectValue("#climate", "high pollution");
+  if (text.includes("software")) setFieldValue("#occupation", "Software Engineer");
+  if (text.includes("smoker") || text.includes("smoking")) setSelectValue("#smoking", "current smoker");
+  if (text.includes("no smoking") || text.includes("non smoker")) setSelectValue("#smoking", "none");
+  if (text.includes("alcohol")) setSelectValue("#alcohol", text.includes("frequent") ? "frequent alcohol" : "occasional alcohol");
+  if (text.includes("no alcohol")) setSelectValue("#alcohol", "none");
+  if (text.includes("processed") || text.includes("sugar")) setSelectValue("#diet-pattern", "processed food, high sugar");
+  if (text.includes("balanced")) setSelectValue("#diet-pattern", "balanced home food");
+  if (text.includes("low water")) setSelectValue("#water-intake", "low water");
+  const symptom = ["fever", "headache", "fatigue", "weakness", "cough", "chest pain", "back pain", "stomach pain", "dizziness"].find((item) => text.includes(item));
+  setFieldValue("#symptom-name", symptom || "");
+  if (text.includes("severe")) setSelectValue("#symptom-severity", "7");
+  if (text.includes("mild")) setSelectValue("#symptom-severity", "1");
+  setFieldValue("#symptom-duration", valueFor(/\b(?:for|duration)\s+(\d{1,4})\s+(?:day|days)\b/));
+  if (!document.querySelector("#question").value) {
+    document.querySelector("#question").value = transcript;
+  }
+}
+
+function optionalVoiceProfile() {
+  const age = Number(document.querySelector("#age").value);
+  if (!age) {
+    return null;
+  }
+  return {
+    age,
+    gender: document.querySelector("#gender").value || null,
+    location: document.querySelector("#location").value || null,
+    climate: document.querySelector("#climate").value || null,
+    occupation: document.querySelector("#occupation").value || null,
+    sleep_hours: Number(document.querySelector("#sleep").value) || null,
+    exercise_frequency: document.querySelector("#exercise").value || null,
+    diet_style: [
+      document.querySelector("#diet-pattern").value,
+      document.querySelector("#water-intake").value,
+      selectedFoods.join(", ")
+    ].filter(Boolean).join(", ") || null,
+    food_habits: selectedFoods,
+    smoking_status: document.querySelector("#smoking").value || null,
+    alcohol_status: document.querySelector("#alcohol").value || null,
+    existing_conditions: csvValues("#conditions"),
+    allergies: csvValues("#allergies"),
+    family_history: csvValues("#family-history"),
+    current_medications: csvValues("#medications").map((medicine) => ({ medicine_name: medicine })),
+    height_cm: Number(document.querySelector("#height").value) || null,
+    weight_kg: Number(document.querySelector("#weight").value) || null
+  };
+}
+
+function setVoiceStatus(message, state = "Idle") {
+  if (voiceStatus) {
+    voiceStatus.innerHTML = message;
+  }
+  if (voicePill) {
+    voicePill.textContent = state;
+    voicePill.className = state.toLowerCase().includes("error") ? "pill urgent" : "pill";
+  }
+}
+
+function voiceErrorMessage(errorCode) {
+  const messages = {
+    "not-allowed": "Microphone permission was blocked. Allow microphone access for this site, then try again.",
+    "service-not-allowed": "The browser speech service is blocked. Try Chrome/Edge with microphone permission enabled.",
+    "audio-capture": "No microphone was detected. Check the mic device and Windows privacy settings.",
+    "network": "The browser speech service could not connect. Check internet access or try another browser.",
+    "no-speech": "No speech was detected. Try again and speak closer to the microphone.",
+    "aborted": "Voice capture was stopped before speech was detected.",
+    "language-not-supported": "The selected voice language is not supported by this browser."
+  };
+  return messages[errorCode] || `Voice input failed: ${errorCode || "unknown browser error"}.`;
+}
+
+async function getMicrophoneStream() {
+  if (!navigator.mediaDevices?.getUserMedia) {
+    throw new Error("This browser does not expose microphone access. Use Chrome or Edge on localhost.");
+  }
+  return navigator.mediaDevices.getUserMedia({ audio: true });
+}
+
+async function ensureMicrophoneAccess() {
+  const stream = await getMicrophoneStream();
+  stream.getTracks().forEach((track) => track.stop());
 }
 
 function addSelectedFood() {
@@ -233,17 +417,120 @@ function closeVerificationModal() {
   verificationModal.setAttribute("aria-hidden", "true");
 }
 
-function setCurrentUser(user) {
+function tourStorageKey(user = currentUser) {
+  return user?.id ? `healthguardTourSeen:${user.id}` : "healthguardTourSeen:anonymous";
+}
+
+function shouldShowFirstTour(user) {
+  return Boolean(user?.id && localStorage.getItem(tourStorageKey(user)) !== "1");
+}
+
+function markTourSeen(user = currentUser) {
+  if (user?.id) {
+    localStorage.setItem(tourStorageKey(user), "1");
+  }
+}
+
+function openTour(options = {}) {
+  if (!tourModal) {
+    return;
+  }
+  tourStepIndex = options.stepIndex ?? 0;
+  renderTourStep();
+  tourModal.classList.add("open");
+  tourModal.style.display = "grid";
+  tourModal.setAttribute("aria-hidden", "false");
+  setTimeout(() => tourNextButton?.focus(), 0);
+}
+
+function closeTour(markSeen = true) {
+  if (!tourModal) {
+    return;
+  }
+  tourModal.classList.remove("open");
+  tourModal.style.display = "";
+  tourModal.setAttribute("aria-hidden", "true");
+  clearTourHighlight();
+  if (markSeen) {
+    markTourSeen();
+  }
+}
+
+function renderTourStep() {
+  const step = tourSteps[tourStepIndex];
+  if (!step) {
+    return;
+  }
+  tourTitle.textContent = step.title;
+  tourCopy.textContent = step.copy;
+  tourVisual.className = `tour-visual tour-visual-${step.visual}`;
+  tourProgress.innerHTML = tourSteps
+    .map((_, index) => `<span class="${index === tourStepIndex ? "active" : ""}" aria-label="Step ${index + 1} of ${tourSteps.length}"></span>`)
+    .join("");
+  tourPrevButton.disabled = tourStepIndex === 0;
+  tourNextButton.textContent = tourStepIndex === tourSteps.length - 1 ? "Finish" : "Next";
+  highlightTourTarget(step.target);
+}
+
+function highlightTourTarget(targetId) {
+  clearTourHighlight();
+  const target = document.querySelector(`#${targetId}`);
+  if (!target) {
+    return;
+  }
+  if (targetId === "reports-panel" && reportsPanel?.hidden) {
+    reportsPanel.hidden = false;
+  }
+  target.classList.add("tour-highlight");
+  target.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function clearTourHighlight() {
+  document.querySelectorAll(".tour-highlight").forEach((element) => element.classList.remove("tour-highlight"));
+}
+
+function nextTourStep() {
+  if (tourStepIndex >= tourSteps.length - 1) {
+    closeTour(true);
+    return;
+  }
+  tourStepIndex += 1;
+  renderTourStep();
+}
+
+function previousTourStep() {
+  tourStepIndex = Math.max(0, tourStepIndex - 1);
+  renderTourStep();
+}
+
+function maybeOpenFirstTour(user) {
+  if (!shouldShowFirstTour(user)) {
+    return;
+  }
+  setTimeout(() => openTour({ stepIndex: 0 }), 450);
+}
+
+function setCurrentUser(user, options = {}) {
+  const previousUser = currentUser;
   currentUser = user;
   if (user) {
     localStorage.setItem("healthguardUser", JSON.stringify(user));
+    loadDocumentContextForCurrentUser();
   } else {
     localStorage.removeItem("healthguardUser");
+    clearDocumentContext({ silent: true, user: previousUser });
   }
   renderAuthState();
+  if (user && options.showTour) {
+    maybeOpenFirstTour(user);
+  }
 }
 
 function renderAuthState() {
+  const showRoleTools = currentUser && currentUser.role !== "patient";
+  roleOnlyElements.forEach((element) => {
+    element.hidden = !showRoleTools;
+  });
   if (!currentUser) {
     document.body.classList.remove("is-authenticated");
     authStatus.innerHTML = pendingVerificationEmail
@@ -256,7 +543,9 @@ function renderAuthState() {
   document.body.classList.add("is-authenticated");
   authStatus.textContent = `${currentUser.name} is logged in as ${currentUser.role}.`;
   homeTitle.textContent = `Welcome, ${currentUser.name}`;
-  homeSubtitle.textContent = `Signed in as ${currentUser.role}. Follow the guided workflow to create safer preventive reports, review saved outputs, and use role-specific tools.`;
+  homeSubtitle.textContent = currentUser.role === "patient"
+    ? "Signed in as patient. Complete the guided assessment, upload optional documents, and review your own saved reports."
+    : `Signed in as ${currentUser.role}. Follow the guided workflow to review saved outputs and use role-specific tools.`;
   roleToolsTitle.textContent = `${currentUser.role} actions`;
   knowledgeForm.classList.toggle("visible", currentUser.role === "admin");
   loadHistory({ resetPage: true });
@@ -270,6 +559,15 @@ function section(title, content) {
   return `<div class="report-section"><h3>${title}</h3>${content}</div>`;
 }
 
+function escapeHtml(value) {
+  return String(value || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
 function renderDocumentStatus() {
   if (!documentStatus) {
     return;
@@ -281,8 +579,38 @@ function renderDocumentStatus() {
   documentStatus.innerHTML = [
     section("Attached document", `<p><strong>${uploadedDocumentContext.filename}</strong> is ready to support the next report.</p>`),
     section("Extracted summary", `<p>${uploadedDocumentContext.rag_summary}</p>`),
+    uploadedDocumentContext.safety_alerts?.length ? section("Safety alerts", list(uploadedDocumentContext.safety_alerts.map(escapeHtml))) : "",
+    uploadedDocumentContext.detected_topics?.length ? section("Detected health topics", list(uploadedDocumentContext.detected_topics.map(escapeHtml))) : "",
+    uploadedDocumentContext.suggested_actions?.length ? section("Relevant suggestions", list(uploadedDocumentContext.suggested_actions.map(escapeHtml))) : "",
+    uploadedDocumentContext.doctor_questions?.length ? section("Questions for doctor", list(uploadedDocumentContext.doctor_questions.map(escapeHtml))) : "",
     section("Processing note", `<p>${uploadedDocumentContext.disclaimer}</p>`)
   ].join("");
+}
+
+function documentContextKey(user = currentUser) {
+  return user?.id ? `healthguardDocumentContext:${user.id}` : "healthguardDocumentContext";
+}
+
+function loadDocumentContextForCurrentUser() {
+  const legacyContext = localStorage.getItem("healthguardDocumentContext");
+  if (legacyContext) {
+    localStorage.removeItem("healthguardDocumentContext");
+  }
+  uploadedDocumentContext = JSON.parse(localStorage.getItem(documentContextKey()) || "null");
+}
+
+function saveDocumentContextForCurrentUser() {
+  if (!currentUser) {
+    return;
+  }
+  localStorage.setItem(documentContextKey(), JSON.stringify(uploadedDocumentContext));
+}
+
+function consumeDocumentContextAfterReport() {
+  if (!uploadedDocumentContext) {
+    return;
+  }
+  clearDocumentContext({ silent: true });
 }
 
 form.addEventListener("submit", async (event) => {
@@ -350,6 +678,7 @@ form.addEventListener("submit", async (event) => {
     return;
   }
 
+  const consumedDocumentContext = uploadedDocumentContext;
   const generated = data.report;
   lastReportId = data.report_id;
   riskPill.textContent = `${generated.risk_summary.overall_risk_level} ${generated.risk_summary.risk_score}`;
@@ -360,6 +689,10 @@ form.addEventListener("submit", async (event) => {
     section("Risk factors", list(generated.risk_summary.key_risk_factors)),
     section("Concerns to discuss with a doctor", list(generated.possible_health_concerns_to_discuss_with_doctor)),
     section("Precautions", list(generated.precautions)),
+    generated.diet_plan?.length ? section("Diet plan", list(generated.diet_plan)) : "",
+    generated.wellness_recommendations?.length ? section("Feel-better precautions", list(generated.wellness_recommendations)) : "",
+    generated.physical_activity_plan?.length ? section("Physical activity plan", list(generated.physical_activity_plan)) : "",
+    generated.doctor_department_guidance?.length ? section("Which doctor to consult", list(generated.doctor_department_guidance)) : "",
     generated.llm_summary ? section("AI summary", `<p>${generated.llm_summary}</p>`) : "",
     section("Generation engine", `<p>${generated.generation_engine || "rules"}</p>`),
     generated.llm_error ? section("LLM status", `<p>${generated.llm_error}</p>`) : "",
@@ -371,11 +704,18 @@ form.addEventListener("submit", async (event) => {
         <button class="secondary" type="button" onclick="approveReport(${data.report_id})">Doctor approve</button>
       </div>`
     ),
-    uploadedDocumentContext?.tuned_context
-      ? section("Uploaded document details", `<p>${uploadedDocumentContext.rag_summary}</p>`)
+    consumedDocumentContext?.tuned_context
+      ? section(
+          "Uploaded document details",
+          [
+            `<p>${escapeHtml(consumedDocumentContext.rag_summary)}</p>`,
+            consumedDocumentContext.suggested_actions?.length ? list(consumedDocumentContext.suggested_actions.map(escapeHtml)) : ""
+          ].join("")
+        )
       : "",
     section("Disclaimer", `<p>${generated.disclaimer}</p>`)
   ].join("");
+  consumeDocumentContextAfterReport();
   await loadHistory({ resetPage: true });
   requestAnimationFrame(() => reportsPanel?.scrollIntoView({ behavior: "smooth", block: "start" }));
 });
@@ -404,17 +744,261 @@ async function uploadDocument(event) {
     return;
   }
   uploadedDocumentContext = data;
-  localStorage.setItem("healthguardDocumentContext", JSON.stringify(uploadedDocumentContext));
+  saveDocumentContextForCurrentUser();
   renderDocumentStatus();
 }
 
-function clearDocumentContext() {
+function getSpeechRecognition() {
+  return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+}
+
+async function startVoiceInput() {
+  if (!currentUser) {
+    setVoiceStatus("Login first to use voice input.", "Error");
+    return;
+  }
+  if (window.MediaRecorder) {
+    await startServerVoiceRecording();
+    return;
+  }
+  const Recognition = getSpeechRecognition();
+  if (!Recognition) {
+    setVoiceStatus("Voice recognition is not supported in this browser. Type the transcript in the box and click Ask HealthGuard.", "Error");
+    return;
+  }
+  try {
+    await ensureMicrophoneAccess();
+  } catch (error) {
+    setVoiceStatus(`${escapeHtml(error.message || "Microphone permission failed.")} Type the transcript manually if needed.`, "Error");
+    return;
+  }
+  window.speechSynthesis?.cancel();
+  stopVoiceInput();
+  voiceFinalTranscript = "";
+  voiceManualStop = false;
+  voiceRecognition = new Recognition();
+  voiceRecognition.lang = "en-IN";
+  voiceRecognition.interimResults = true;
+  voiceRecognition.continuous = false;
+  voiceRecognition.maxAlternatives = 1;
+  voiceRecognition.onstart = () => {
+    voiceStartButton.disabled = true;
+    voiceStopButton.disabled = false;
+    voiceStartButton.setAttribute("aria-pressed", "true");
+    setVoiceStatus("Listening. Speak your symptoms, lifestyle details, or report question.", "Listening");
+  };
+  voiceRecognition.onresult = (event) => {
+    let interim = "";
+    for (let index = event.resultIndex; index < event.results.length; index += 1) {
+      const transcript = event.results[index][0].transcript;
+      if (event.results[index].isFinal) {
+        voiceFinalTranscript += `${transcript} `;
+      } else {
+        interim += transcript;
+      }
+    }
+    const combined = `${voiceFinalTranscript}${interim}`.trim();
+    voiceTranscript.value = combined;
+    extractVoiceIntake(combined);
+  };
+  voiceRecognition.onerror = (event) => {
+    setVoiceStatus(`${voiceErrorMessage(event.error)} You can still type the transcript and submit it.`, "Error");
+  };
+  voiceRecognition.onend = () => {
+    voiceStartButton.disabled = false;
+    voiceStopButton.disabled = true;
+    voiceStartButton.setAttribute("aria-pressed", "false");
+    if (voicePill?.textContent === "Listening" && voiceTranscript.value.trim()) {
+      setVoiceStatus("Voice capture stopped. Review the transcript, then ask HealthGuard.", "Ready");
+    } else if (voicePill?.textContent === "Listening" && !voiceManualStop) {
+      setVoiceStatus("Listening ended without a transcript. Check microphone permission and try again, or type manually.", "Error");
+    }
+    voiceRecognition = null;
+  };
+  try {
+    voiceRecognition.start();
+  } catch (error) {
+    setVoiceStatus(`${escapeHtml(error.message || "Voice recognition could not start.")} Try again or type the transcript manually.`, "Error");
+    voiceRecognition = null;
+    voiceStartButton.disabled = false;
+    voiceStopButton.disabled = true;
+    voiceStartButton.setAttribute("aria-pressed", "false");
+  }
+}
+
+function stopVoiceInput() {
+  if (voiceMediaRecorder && voiceMediaRecorder.state === "recording") {
+    voiceManualStop = true;
+    voiceMediaRecorder.stop();
+    return;
+  }
+  if (voiceRecognition) {
+    voiceManualStop = true;
+    voiceRecognition.stop();
+  }
+}
+
+async function startServerVoiceRecording() {
+  stopVoiceInput();
+  stopVoiceTracks();
+  try {
+    voiceAudioStream = await getMicrophoneStream();
+  } catch (error) {
+    setVoiceStatus(`${escapeHtml(error.message || "Microphone permission failed.")} Type the transcript manually if needed.`, "Error");
+    return;
+  }
+  window.speechSynthesis?.cancel();
+  voiceAudioChunks = [];
+  voiceManualStop = false;
+  const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+    ? "audio/webm;codecs=opus"
+    : MediaRecorder.isTypeSupported("audio/webm")
+      ? "audio/webm"
+      : "";
+  voiceMediaRecorder = new MediaRecorder(voiceAudioStream, mimeType ? { mimeType } : undefined);
+  voiceMediaRecorder.ondataavailable = (event) => {
+    if (event.data?.size) {
+      voiceAudioChunks.push(event.data);
+    }
+  };
+  voiceMediaRecorder.onerror = (event) => {
+    setVoiceStatus(`Audio recording failed: ${escapeHtml(event.error?.message || "unknown recording error")}.`, "Error");
+    stopVoiceTracks();
+  };
+  voiceMediaRecorder.onstop = async () => {
+    voiceStartButton.disabled = false;
+    voiceStopButton.disabled = true;
+    voiceStartButton.setAttribute("aria-pressed", "false");
+    stopVoiceTracks();
+    const blob = new Blob(voiceAudioChunks, { type: voiceMediaRecorder?.mimeType || "audio/webm" });
+    const durationMs = Date.now() - voiceRecordingStartedAt;
+    voiceMediaRecorder = null;
+    if (!blob.size || durationMs < 1500) {
+      setVoiceStatus("Recording was too short. Hold the mic for at least two seconds, speak clearly, then press Stop.", "Error");
+      return;
+    }
+    await transcribeRecordedVoice(blob);
+  };
+  voiceRecordingStartedAt = Date.now();
+  voiceMediaRecorder.start(1000);
+  voiceStartButton.disabled = true;
+  voiceStopButton.disabled = false;
+  voiceStartButton.setAttribute("aria-pressed", "true");
+  setVoiceStatus("Recording locally. Speak for at least two seconds, then press Stop. Audio will be transcribed by Hugging Face.", "Recording");
+}
+
+function stopVoiceTracks() {
+  if (voiceAudioStream) {
+    voiceAudioStream.getTracks().forEach((track) => track.stop());
+    voiceAudioStream = null;
+  }
+}
+
+async function transcribeRecordedVoice(blob) {
+  setVoiceStatus("Transcribing your recording with Hugging Face speech recognition...", "Transcribing");
+  const body = new FormData();
+  body.append("audio", blob, "voice-input.webm");
+  const response = await fetch("/api/voice/transcribe", {
+    method: "POST",
+    headers: authHeaders(),
+    body
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    setVoiceStatus(`${formatApiError(response, data, "Voice transcription failed.")} Type the transcript manually if needed.`, `Error ${response.status}`);
+    return;
+  }
+  voiceTranscript.value = data.transcript;
+  extractVoiceIntake(data.transcript);
+  setVoiceStatus(`Transcript captured with ${escapeHtml(data.model)}. Generating HealthGuard answer...`, "Transcript ready");
+  await submitVoiceQuestion();
+}
+
+async function submitVoiceQuestion() {
+  if (!currentUser) {
+    setVoiceStatus("Login first to ask HealthGuard.", "Error");
+    return;
+  }
+  const transcript = voiceTranscript.value.trim();
+  if (!transcript) {
+    setVoiceStatus("Speak or type a question before submitting.", "Error");
+    return;
+  }
+  if (!document.querySelector("#consent").checked) {
+    setVoiceStatus("Consent is required before processing health information.", "Error");
+    return;
+  }
+  extractVoiceIntake(transcript);
+  setVoiceStatus("Processing your voice input with safety checks and supporting knowledge...", "Working");
+  const payload = {
+    question: uploadedDocumentContext?.tuned_context
+      ? `${transcript}\n\nUploaded document context:\n${uploadedDocumentContext.tuned_context}`
+      : transcript,
+    profile: optionalVoiceProfile(),
+    consent_to_process_health_data: true
+  };
+  const response = await fetch("/api/chat/health-question", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify(payload)
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    lastVoiceAnswer = "";
+    voiceReadButton.disabled = true;
+    setVoiceStatus(formatApiError(response, data, "Voice assistant failed."), `Error ${response.status}`);
+    return;
+  }
+  lastVoiceAnswer = data.answer;
+  voiceReadButton.disabled = false;
+  setVoiceStatus(
+    [
+      section("Transcript", `<p>${escapeHtml(transcript)}</p>`),
+      data.red_flags?.length ? section("Safety alerts", list(data.red_flags.map(escapeHtml))) : "",
+      section("Answer", `<p>${escapeHtml(data.answer)}</p>`),
+      data.sources?.length
+        ? section("Supporting knowledge", list(data.sources.slice(0, 3).map((source) => escapeHtml(`${source.title}: ${source.excerpt}`))))
+        : "",
+      section("Disclaimer", `<p>${escapeHtml(data.disclaimer)}</p>`)
+    ].join(""),
+    data.red_flags?.length ? "Alert" : "Answered"
+  );
+  speakVoiceAnswer();
+}
+
+function speakVoiceAnswer() {
+  if (!lastVoiceAnswer || !window.speechSynthesis) {
+    setVoiceStatus(voiceStatus.innerHTML || "No answer is ready to read.", "Error");
+    return;
+  }
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(lastVoiceAnswer);
+  utterance.lang = "en-IN";
+  utterance.rate = 0.95;
+  utterance.pitch = 1;
+  window.speechSynthesis.speak(utterance);
+}
+
+function clearVoiceAssistant() {
+  stopVoiceInput();
+  window.speechSynthesis?.cancel();
+  voiceTranscript.value = "";
+  voiceFinalTranscript = "";
+  lastVoiceAnswer = "";
+  voiceReadButton.disabled = true;
+  setVoiceStatus("Press Start mic and speak clearly. Your browser may ask for microphone permission.", "Idle");
+}
+
+function clearDocumentContext(options = {}) {
   uploadedDocumentContext = null;
   localStorage.removeItem("healthguardDocumentContext");
+  localStorage.removeItem(documentContextKey(options.user || currentUser));
   if (documentFile) {
     documentFile.value = "";
   }
-  renderDocumentStatus();
+  if (!options.silent) {
+    renderDocumentStatus();
+  }
 }
 
 async function loadHistory(options = {}) {
@@ -454,9 +1038,14 @@ function renderSavedReports() {
   const totalPages = Math.ceil(savedReports.length / savedReportsPageSize);
   const pageStart = (savedReportsPage - 1) * savedReportsPageSize;
   const pageItems = savedReports.slice(pageStart, pageStart + savedReportsPageSize);
+  const canReviewReports = currentUser && ["doctor", "dietician"].includes(currentUser.role);
   const reportList = pageItems
     .map(
-      (item) => `<div class="history-item">
+      (item) => {
+        const reviewAction = canReviewReports
+          ? `<button class="secondary" type="button" onclick="approveReport(${item.id})">Approve</button>`
+          : "";
+        return `<div class="history-item">
         <div>
           <strong>#${item.id}</strong> ${item.patient_summary.location || "Unknown location"} -
           ${item.patient_summary.occupation || "Unknown occupation"} -
@@ -466,9 +1055,10 @@ function renderSavedReports() {
         </div>
         <div class="actions">
           <a class="button-link" href="/api/reports/${item.id}/download?demo_token=${encodeURIComponent(currentUser.demo_token)}">PDF</a>
-          <button class="secondary" type="button" onclick="approveReport(${item.id})">Approve</button>
+          ${reviewAction}
         </div>
-      </div>`
+      </div>`;
+      }
     )
     .join("");
   const pager =
@@ -479,7 +1069,10 @@ function renderSavedReports() {
           <button class="secondary" type="button" data-history-page="next" ${savedReportsPage === totalPages ? "disabled" : ""}>Next</button>
         </div>`
       : "";
-  historyPanel.innerHTML = `${reportList}${pager}`;
+  const privacyNote = currentUser?.role === "patient"
+    ? `<p class="privacy-note">Showing reports saved for ${escapeHtml(currentUser.name)} only.</p>`
+    : `<p class="privacy-note">Showing reports owned by this logged-in account only. Use Role tools for patient review queues.</p>`;
+  historyPanel.innerHTML = `${privacyNote}${reportList}${pager}`;
 }
 
 function renderPatientReportFolders(folders = []) {
@@ -496,17 +1089,28 @@ function renderPatientReportFolders(folders = []) {
       ].join(" - ");
       const reports = folder.reports
         .map(
-          (item) => `<div class="history-item">
+          (item) => {
+            const factors = (item.risk_factors || []).slice(0, 3).map(escapeHtml).join(", ");
+            const questions = (item.doctor_questions || []).slice(0, 2).map(escapeHtml);
+            return `<div class="history-item patient-folder-report">
             <div>
               <strong>#${item.id}</strong> ${item.risk_level} ${item.risk_score}
               <br />
               Review: ${item.doctor_review_status}
+              <div class="patient-problem">
+                <span>Patient problem</span>
+                <p>${escapeHtml(item.problem_summary || "Review generated report.")}</p>
+                ${factors ? `<small>Key factors: ${factors}</small>` : ""}
+                ${item.uses_uploaded_document ? `<small>Includes uploaded document context.</small>` : ""}
+                ${questions.length ? `<small>Doctor questions: ${questions.join(" | ")}</small>` : ""}
+              </div>
             </div>
             <div class="actions">
               <a class="button-link" href="/api/reports/${item.id}/download?demo_token=${encodeURIComponent(currentUser.demo_token)}">PDF</a>
               <button class="secondary" type="button" onclick="approveReport(${item.id})">Approve</button>
             </div>
-          </div>`
+          </div>`;
+          }
         )
         .join("");
       return section(title, `<p>${folder.pending_count} pending of ${folder.total_count} report(s).</p>${reports}`);
@@ -589,27 +1193,47 @@ loginForm.addEventListener("submit", async (event) => {
   pendingVerificationEmail = "";
   localStorage.removeItem("healthguardPendingEmail");
   clearAuthForm(loginForm);
-  setCurrentUser(data);
+  setCurrentUser(data, { showTour: true });
 });
 
-logoutButton.addEventListener("click", () => setCurrentUser(null));
-homeLogoutButton.addEventListener("click", () => setCurrentUser(null));
+logoutButton.addEventListener("click", () => {
+  closeTour(false);
+  setCurrentUser(null);
+});
+homeLogoutButton.addEventListener("click", () => {
+  closeTour(false);
+  setCurrentUser(null);
+});
 loadRoleData.addEventListener("click", loadRoleActions);
 documentForm?.addEventListener("submit", uploadDocument);
 clearDocumentContextButton?.addEventListener("click", clearDocumentContext);
 foodGroupSelect?.addEventListener("change", populateFoodItems);
 addFoodButton?.addEventListener("click", addSelectedFood);
+voiceStartButton?.addEventListener("click", startVoiceInput);
+voiceStopButton?.addEventListener("click", stopVoiceInput);
+voiceSubmitButton?.addEventListener("click", submitVoiceQuestion);
+voiceReadButton?.addEventListener("click", speakVoiceAnswer);
+voiceClearButton?.addEventListener("click", clearVoiceAssistant);
 verifyEmailButton.addEventListener("click", verifyEmail);
 loadConfirmationEmailButton?.addEventListener("click", loadLatestConfirmationEmail);
 resendConfirmationButton.addEventListener("click", resendConfirmation);
 closeVerificationModalButton?.addEventListener("click", closeVerificationModal);
 verificationModal?.querySelector(".modal-backdrop")?.addEventListener("click", closeVerificationModal);
+openTourButton?.addEventListener("click", () => openTour({ stepIndex: 0 }));
+closeTourButton?.addEventListener("click", () => closeTour(true));
+tourModal?.querySelector(".modal-backdrop")?.addEventListener("click", () => closeTour(true));
+tourNextButton?.addEventListener("click", nextTourStep);
+tourPrevButton?.addEventListener("click", previousTourStep);
+tourSkipButton?.addEventListener("click", () => closeTour(true));
 document.addEventListener("click", (event) => {
   if (event.target.matches("[data-open-verification]")) {
     openVerificationModal(pendingVerificationEmail || document.querySelector("#login-email").value);
   }
   const scrollTarget = event.target.closest("[data-scroll-target]");
   if (scrollTarget) {
+    if (scrollTarget.hidden || scrollTarget.closest("[hidden]")) {
+      return;
+    }
     document.querySelectorAll(".menu-button").forEach((button) => button.classList.remove("active"));
     if (scrollTarget.classList.contains("menu-button")) {
       scrollTarget.classList.add("active");
@@ -634,6 +1258,11 @@ document.addEventListener("click", (event) => {
   if (removeFood) {
     selectedFoods.splice(Number(removeFood.dataset.removeFood), 1);
     renderSelectedFoods();
+  }
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && tourModal?.classList.contains("open")) {
+    closeTour(true);
   }
 });
 document.querySelectorAll(".sso-button").forEach((button) => {
@@ -717,7 +1346,7 @@ async function verifyEmail() {
   pendingVerificationEmail = "";
   localStorage.removeItem("healthguardPendingEmail");
   closeVerificationModal();
-  setCurrentUser(data);
+  setCurrentUser(data, { showTour: true });
 }
 
 async function loadLatestConfirmationEmail() {

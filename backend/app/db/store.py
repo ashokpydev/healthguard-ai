@@ -115,6 +115,8 @@ class ConnectionAdapter:
                 "assessments",
                 "reports",
                 "knowledge_documents",
+                "rag_documents",
+                "rag_chunks",
                 "audit_logs",
             ]
         )
@@ -146,6 +148,18 @@ def init_db() -> None:
         _ensure_column(conn, "users", "verification_sent_at", "TEXT")
         _ensure_column(conn, "users", "sso_provider", "TEXT")
         _ensure_column(conn, "users", "sso_subject", "TEXT")
+        _ensure_column(conn, "reports", "assigned_reviewer_id", "INTEGER")
+        _ensure_column(conn, "reports", "review_priority", "TEXT NOT NULL DEFAULT 'routine'")
+        _ensure_column(conn, "reports", "clinician_signature", "TEXT")
+        _ensure_column(conn, "reports", "escalation_reason", "TEXT")
+        _ensure_column(conn, "reports", "review_history_json", "TEXT NOT NULL DEFAULT '[]'")
+        _ensure_column(conn, "audit_logs", "ip_address", "TEXT")
+        _ensure_column(conn, "audit_logs", "user_agent", "TEXT")
+        _ensure_column(conn, "audit_logs", "metadata_json", "TEXT NOT NULL DEFAULT '{}'")
+        _ensure_column(conn, "audit_logs", "event_hash", "TEXT")
+        _ensure_column(conn, "audit_logs", "previous_hash", "TEXT")
+        _ensure_column(conn, "audit_logs", "retention_until", "TEXT")
+        _ensure_column(conn, "audit_logs", "immutable", "INTEGER NOT NULL DEFAULT 1")
 
 
 def _sqlite_schema() -> str:
@@ -215,6 +229,11 @@ def _shared_schema(id_definition: str) -> str:
         doctor_review_status TEXT NOT NULL DEFAULT 'pending',
         doctor_comments TEXT,
         final_clinical_notes TEXT,
+        assigned_reviewer_id INTEGER,
+        review_priority TEXT NOT NULL DEFAULT 'routine',
+        clinician_signature TEXT,
+        escalation_reason TEXT,
+        review_history_json TEXT NOT NULL DEFAULT '[]',
         created_at TEXT NOT NULL,
         reviewed_at TEXT
     );
@@ -228,6 +247,28 @@ def _shared_schema(id_definition: str) -> str:
         created_at TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS rag_documents (
+        id {id_definition},
+        user_id INTEGER REFERENCES users(id),
+        title TEXT NOT NULL,
+        source_type TEXT NOT NULL,
+        filename TEXT,
+        content_hash TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'indexed',
+        created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS rag_chunks (
+        id {id_definition},
+        document_id INTEGER NOT NULL REFERENCES rag_documents(id),
+        user_id INTEGER REFERENCES users(id),
+        chunk_index INTEGER NOT NULL,
+        content TEXT NOT NULL,
+        embedding_json TEXT NOT NULL,
+        token_count INTEGER NOT NULL,
+        created_at TEXT NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS audit_logs (
         id {id_definition},
         user_id INTEGER,
@@ -235,6 +276,13 @@ def _shared_schema(id_definition: str) -> str:
         input_summary TEXT NOT NULL,
         output_summary TEXT NOT NULL,
         risk_flags TEXT NOT NULL,
+        ip_address TEXT,
+        user_agent TEXT,
+        metadata_json TEXT NOT NULL DEFAULT '{{}}',
+        event_hash TEXT,
+        previous_hash TEXT,
+        retention_until TEXT,
+        immutable INTEGER NOT NULL DEFAULT 1,
         created_at TEXT NOT NULL
     );
     """
