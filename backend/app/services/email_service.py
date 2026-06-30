@@ -24,6 +24,19 @@ class EmailService:
             raise RuntimeError(f"SMTP send failed: {type(exc).__name__}: {exc}") from exc
         return self._record_outbox(recipient, subject, body, code, "sent")
 
+    def send_password_reset(self, recipient: str, token: str) -> dict:
+        subject = "Reset your HealthGuard AI password"
+        body = self._password_reset_body(token)
+        if os.getenv("SMTP_TEST_MODE") == "1":
+            return self._record_outbox(recipient, subject, body, token, "sent")
+        if not self._smtp_configured():
+            raise RuntimeError("SMTP is not configured. Password reset email cannot be sent.")
+        try:
+            self._send_smtp(recipient, subject, body)
+        except (smtplib.SMTPException, OSError) as exc:
+            raise RuntimeError(f"SMTP send failed: {type(exc).__name__}: {exc}") from exc
+        return self._record_outbox(recipient, subject, body, token, "sent")
+
     def _record_outbox(self, recipient: str, subject: str, body: str, code: str, status: str) -> dict:
         with connect() as conn:
             cursor = conn.execute(
@@ -42,6 +55,14 @@ class EmailService:
             f"{code}\n\n"
             "This code is required to unlock your dashboard.\n\n"
             "If you did not create this account, you can ignore this message."
+        )
+
+    def _password_reset_body(self, token: str) -> str:
+        return (
+            "HealthGuard AI password reset requested.\n\n"
+            "Use this reset token in the application to set a new password:\n"
+            f"{token}\n\n"
+            "This token expires soon. If you did not request a password reset, ignore this email."
         )
 
     def latest_for(self, recipient: str) -> dict | None:

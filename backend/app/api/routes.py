@@ -2,19 +2,26 @@ import html
 import json
 import os
 import secrets
+import time
 
 from fastapi import APIRouter, Cookie, File, Header, HTTPException, Query, Request, Response, UploadFile
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 
 from backend.app.schemas.health import (
     AssessmentRequest,
+    ChatExportRequest,
+    ChatFeedbackRequest,
     ChatRequest,
     DoctorAssignmentRequest,
     DoctorReviewRequest,
     EmailVerificationRequest,
     HealthProfile,
     KnowledgeUploadRequest,
+    KnowledgeCategoryRequest,
     LoginRequest,
+    PasswordResetConfirmRequest,
+    PasswordResetRequest,
+    PrivacyDeleteRequest,
     ResendVerificationRequest,
     RegisterRequest,
 )
@@ -50,8 +57,14 @@ def check_rate(key: str, limit: int = 80, window_seconds: int = 60) -> None:
 
 def set_secure_session_cookies(response: Response, token: str) -> None:
     csrf_token = secrets.token_urlsafe(24)
-    response.set_cookie("healthguard_session", token, httponly=True, samesite="strict", secure=False, max_age=60 * 60 * 8)
-    response.set_cookie("healthguard_csrf", csrf_token, httponly=False, samesite="strict", secure=False, max_age=60 * 60 * 8)
+    max_age = int(os.getenv("AUTH_SESSION_MINUTES", "480")) * 60
+    response.set_cookie("healthguard_session", token, httponly=True, samesite="strict", secure=False, max_age=max_age)
+    response.set_cookie("healthguard_csrf", csrf_token, httponly=False, samesite="strict", secure=False, max_age=max_age)
+
+
+def clear_session_cookies(response: Response) -> None:
+    response.delete_cookie("healthguard_session")
+    response.delete_cookie("healthguard_csrf")
 
 
 def enforce_csrf_if_cookie_auth(
@@ -125,6 +138,38 @@ def health_rag(x_demo_token: str | None = Header(default=None)) -> dict:
     return RAGService().status(user_id=user["id"] if user and user["role"] == "patient" else None)
 
 
+@router.get("/health/compliance")
+def health_compliance(x_demo_token: str | None = Header(default=None)) -> dict:
+    require_role({"admin", "compliance"}, x_demo_token)
+    return {
+        "status": "pilot-ready-controls",
+        "estimated_healthcare_compliance_readiness": "about 60%",
+        "implemented_controls": [
+            "verified authentication gate",
+            "role-based access control",
+            "patient-owned report isolation",
+            "consent records",
+            "encrypted PHI payload storage",
+            "audit hash chain with retention metadata",
+            "upload security scan",
+            "privacy export",
+            "patient health-data deletion request",
+            "security response headers",
+            "RAG per-user document isolation",
+            "LLM fail-closed report generation",
+        ],
+        "remaining_for_production_compliance": [
+            "BAA with cloud provider and subprocessors",
+            "KMS/Vault-managed encryption keys and rotation",
+            "independent penetration test",
+            "formal HIPAA risk assessment",
+            "centralized SIEM monitoring and incident response plan",
+            "malware scanner service integration",
+            "backup/restore and disaster recovery evidence",
+        ],
+    }
+
+
 @router.post("/auth/register")
 def register(request: RegisterRequest, raw_request: Request) -> dict:
     check_rate(client_key(raw_request, suffix="auth.register"), limit=100, window_seconds=300)
@@ -161,6 +206,37 @@ def login(request: LoginRequest, response: Response, raw_request: Request) -> di
         metadata=audit_metadata_from_request(raw_request, user),
     )
     return user
+
+
+@router.post("/auth/logout")
+def logout(response: Response, x_demo_token: str | None = Header(default=None), healthguard_session: str | None = Cookie(default=None)) -> dict:
+    token = x_demo_token or healthguard_session
+    if token:
+        AuthService().logout(token)
+    clear_session_cookies(response)
+    return {"message": "Logged out."}
+
+
+@router.post("/auth/password-reset/request")
+def request_password_reset(request: PasswordResetRequest, raw_request: Request) -> dict:
+    check_rate(client_key(raw_request, suffix="auth.password-reset"), limit=20, window_seconds=300)
+    try:
+        result = AuthService().request_password_reset(request)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    StorageService().save_audit("auth.password-reset.request", request.email, "password reset requested", metadata=audit_metadata_from_request(raw_request))
+    return result
+
+
+@router.post("/auth/password-reset/confirm")
+def confirm_password_reset(request: PasswordResetConfirmRequest, raw_request: Request) -> dict:
+    check_rate(client_key(raw_request, suffix="auth.password-reset-confirm"), limit=30, window_seconds=300)
+    try:
+        result = AuthService().confirm_password_reset(request)
+    except PermissionError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    StorageService().save_audit("auth.password-reset.confirm", request.email, "password reset confirmed", metadata=audit_metadata_from_request(raw_request))
+    return result
 
 
 @router.get("/auth/verify-email")
@@ -240,7 +316,14 @@ def sso_callback(provider: str, response: Response, raw_request: Request, code: 
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except RuntimeError as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
+        StorageService().save_audit(
+            "voice.transcribe.failed",
+            filename,
+            str(exc)[:500],
+            user_id=user["id"],
+            metadata=audit_metadata_from_request(raw_request, user),
+        )
+        raise HTTPException(status_code=503, detail="Voice transcription is temporarily unavailable. Please type the transcript manually.") from exc
     set_secure_session_cookies(response, user["demo_token"])
     StorageService().save_audit("auth.sso-login", user["email"], f"{provider} login success", user_id=user["id"], metadata=audit_metadata_from_request(raw_request, user))
     payload = html.escape(json.dumps(user), quote=False)
@@ -275,6 +358,7 @@ def submit_assessment(request: AssessmentRequest, raw_request: Request, x_demo_t
     user = require_user(x_demo_token)
     if not request.consent_to_process_health_data:
         raise HTTPException(status_code=400, detail="Consent is required before processing health data.")
+    StorageService().record_consent(user, "assessments.submit", audit_metadata_from_request(raw_request, user))
     try:
         report = ReportService().generate(request, user_id=user["id"] if user["role"] == "patient" else None).model_dump()
     except ReportLLMError as exc:
@@ -303,6 +387,7 @@ def generate_report(request: AssessmentRequest, raw_request: Request, x_demo_tok
     check_rate(client_key(raw_request, user, "reports.generate"), limit=60, window_seconds=300)
     if not request.consent_to_process_health_data:
         raise HTTPException(status_code=400, detail="Consent is required before processing health data.")
+    StorageService().record_consent(user, "reports.generate", audit_metadata_from_request(raw_request, user))
     try:
         report = ReportService().generate(request, user_id=user["id"] if user["role"] == "patient" else None).model_dump()
     except ReportLLMError as exc:
@@ -339,6 +424,15 @@ def get_report(report_id: int, x_demo_token: str | None = Header(default=None), 
     return item
 
 
+@router.get("/reports/{report_id}/versions")
+def report_versions(report_id: int, x_demo_token: str | None = Header(default=None), healthguard_session: str | None = Cookie(default=None)) -> dict:
+    user = require_user(x_demo_token, healthguard_session=healthguard_session)
+    item = StorageService().get_report(report_id, user)
+    if not item:
+        raise HTTPException(status_code=404, detail="Report not found.")
+    return {"items": item.get("version_history", []), "current_version": item.get("current_version", 1)}
+
+
 @router.get("/reports/{report_id}/download")
 def download_report(
     report_id: int,
@@ -358,21 +452,197 @@ def download_report(
     )
 
 
+@router.get("/notifications")
+def notifications(x_demo_token: str | None = Header(default=None), healthguard_session: str | None = Cookie(default=None)) -> dict:
+    user = require_user(x_demo_token, healthguard_session=healthguard_session)
+    return {"items": StorageService().list_notifications(user)}
+
+
+@router.post("/notifications/{notification_id}/read")
+def mark_notification_read(notification_id: int, x_demo_token: str | None = Header(default=None), healthguard_session: str | None = Cookie(default=None)) -> dict:
+    user = require_user(x_demo_token, healthguard_session=healthguard_session)
+    item = StorageService().mark_notification_read(notification_id, user)
+    if not item:
+        raise HTTPException(status_code=404, detail="Notification not found.")
+    return item
+
+
+@router.get("/privacy/export")
+def privacy_export(raw_request: Request, x_demo_token: str | None = Header(default=None), healthguard_session: str | None = Cookie(default=None)) -> dict:
+    user = require_user(x_demo_token, healthguard_session=healthguard_session)
+    export = StorageService().export_user_health_data(user)
+    StorageService().save_audit(
+        "privacy.export",
+        user["email"],
+        "user health data exported",
+        user_id=user["id"],
+        metadata=audit_metadata_from_request(raw_request, user),
+    )
+    return export
+
+
+@router.post("/privacy/delete-health-data")
+def privacy_delete_health_data(request: PrivacyDeleteRequest, raw_request: Request, x_demo_token: str | None = Header(default=None), healthguard_session: str | None = Cookie(default=None)) -> dict:
+    user = require_user(x_demo_token, healthguard_session=healthguard_session)
+    result = StorageService().delete_user_health_data(user, audit_metadata_from_request(raw_request, user))
+    StorageService().save_audit(
+        "privacy.delete-health-data",
+        user["email"],
+        f"deleted user-owned health data request {result['request_id']}",
+        user_id=user["id"],
+        metadata=audit_metadata_from_request(raw_request, user, {"request_id": result["request_id"]}),
+    )
+    return result
+
+
+def _answer_and_persist_chat(request: ChatRequest, user: dict, raw_request: Request) -> dict:
+    started_at = time.perf_counter()
+    storage = StorageService()
+    conversation = storage.ensure_chat_conversation(
+        user,
+        conversation_id=request.conversation_id,
+        report_id=request.report_id,
+        title=request.question[:80],
+    )
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Chat conversation not found.")
+    user_message = storage.save_chat_message(conversation["id"], user["id"], "user", request.question)
+    chat_memory = storage.list_chat_messages(user, conversation["id"], limit=12)
+    answer = ChatService().answer(request, user_id=user["id"] if user["role"] == "patient" else None, chat_memory=chat_memory)
+    latency_ms = int((time.perf_counter() - started_at) * 1000)
+    payload = answer.model_dump()
+    assistant_message = storage.save_chat_message(
+        conversation["id"],
+        user["id"],
+        "assistant",
+        answer.answer,
+        answer.red_flags,
+        [source.model_dump() if hasattr(source, "model_dump") else dict(source) for source in answer.sources],
+        answer.doctor_consultation_required,
+        answer.prompt_version,
+        answer.answer_source,
+        answer.generation_engine,
+        answer.rag_used,
+    )
+    payload.update(
+        {
+            "conversation_id": conversation["id"],
+            "user_message_id": user_message["id"],
+            "assistant_message_id": assistant_message["id"],
+            "emergency_escalation": bool(answer.red_flags),
+        }
+    )
+    StorageService().save_audit(
+        "chat.health-question",
+        request.question,
+        answer.answer,
+        answer.red_flags,
+        user_id=user["id"],
+        metadata=audit_metadata_from_request(raw_request, user, {"conversation_id": conversation["id"], "report_id": request.report_id}),
+    )
+    storage.save_chat_analytics(
+        user,
+        conversation["id"],
+        request.question,
+        answer.answer_source,
+        answer.answer_source,
+        answer.prompt_version,
+        latency_ms,
+        answer.rag_used,
+        answer.unresolved,
+    )
+    return payload
+
+
 @router.post("/chat/health-question")
 def health_question(request: ChatRequest, raw_request: Request, x_demo_token: str | None = Header(default=None)):
     user = require_user(x_demo_token)
     if not request.consent_to_process_health_data:
         raise HTTPException(status_code=400, detail="Consent is required before processing health data.")
-    answer = ChatService().answer(request, user_id=user["id"] if user["role"] == "patient" else None)
-    StorageService().save_audit("chat.health-question", request.question, answer.answer, answer.red_flags, user_id=user["id"], metadata=audit_metadata_from_request(raw_request, user))
-    return answer
+    StorageService().record_consent(user, "chat.health-question", audit_metadata_from_request(raw_request, user))
+    return _answer_and_persist_chat(request, user, raw_request)
+
+
+@router.post("/chat/health-question/stream")
+def health_question_stream(request: ChatRequest, raw_request: Request, x_demo_token: str | None = Header(default=None)):
+    user = require_user(x_demo_token)
+    if not request.consent_to_process_health_data:
+        raise HTTPException(status_code=400, detail="Consent is required before processing health data.")
+    StorageService().record_consent(user, "chat.health-question.stream", audit_metadata_from_request(raw_request, user))
+    payload = _answer_and_persist_chat(request, user, raw_request)
+
+    def events():
+        words = payload["answer"].split(" ")
+        running: list[str] = []
+        for word in words:
+            running.append(word)
+            yield f"data: {json.dumps({'type': 'token', 'text': word + ' '})}\n\n"
+        yield f"data: {json.dumps({'type': 'done', 'payload': payload})}\n\n"
+
+    return StreamingResponse(events(), media_type="text/event-stream")
+
+
+@router.get("/chat/conversations")
+def chat_conversations(x_demo_token: str | None = Header(default=None), report_id: int | None = Query(default=None)) -> dict:
+    user = require_user(x_demo_token)
+    return {"items": StorageService().list_chat_conversations(user, report_id=report_id)}
+
+
+@router.get("/chat/starter-questions")
+def chat_starter_questions(x_demo_token: str | None = Header(default=None)) -> dict:
+    user = require_user(x_demo_token)
+    return {"items": StorageService().chat_starter_questions(user)}
+
+
+@router.get("/chat/analytics")
+def chat_analytics(x_demo_token: str | None = Header(default=None)) -> dict:
+    user = require_user(x_demo_token)
+    return StorageService().chat_analytics_summary(user)
+
+
+@router.post("/chat/export")
+def chat_export(request: ChatExportRequest, raw_request: Request, x_demo_token: str | None = Header(default=None)) -> dict:
+    user = require_user(x_demo_token)
+    conversation = StorageService().export_chat_conversation(user, request.conversation_id)
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Chat conversation not found.")
+    lines = [f"HealthGuard AI Chat Conversation #{conversation['id']}", ""]
+    for message in conversation.get("messages", []):
+        label = "HealthGuard" if message["role"] == "assistant" else "User"
+        lines.append(f"{label}: {message['content']}")
+    export_text = "\n".join(lines)
+    StorageService().save_audit(
+        "chat.export",
+        str(request.conversation_id),
+        "chat conversation exported",
+        user_id=user["id"],
+        metadata=audit_metadata_from_request(raw_request, user, {"conversation_id": request.conversation_id, "report_id": request.report_id}),
+    )
+    return {"conversation_id": conversation["id"], "report_id": request.report_id, "content": export_text}
+
+
+@router.post("/chat/feedback")
+def chat_feedback(request: ChatFeedbackRequest, raw_request: Request, x_demo_token: str | None = Header(default=None)) -> dict:
+    user = require_user(x_demo_token)
+    item = StorageService().save_chat_feedback(user, request.message_id, request.rating, request.reason)
+    if not item:
+        raise HTTPException(status_code=404, detail="Chat message not found.")
+    StorageService().save_audit(
+        "chat.feedback",
+        str(request.message_id),
+        request.rating,
+        user_id=user["id"],
+        metadata=audit_metadata_from_request(raw_request, user, {"rating": request.rating}),
+    )
+    return item
 
 
 @router.post("/symptoms/triage")
 def triage(request: ChatRequest, x_demo_token: str | None = Header(default=None)):
-    require_user(x_demo_token)
+    user = require_user(x_demo_token)
     if not request.consent_to_process_health_data:
         raise HTTPException(status_code=400, detail="Consent is required before processing health data.")
+    StorageService().record_consent(user, "symptoms.triage", {})
     return TriageService().analyze([], request.question)
 
 
@@ -387,7 +657,14 @@ async def transcribe_voice(audio: UploadFile = File(...), raw_request: Request =
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except RuntimeError as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
+        StorageService().save_audit(
+            "voice.transcribe.failed",
+            filename,
+            str(exc)[:500],
+            user_id=user["id"],
+            metadata=audit_metadata_from_request(raw_request, user),
+        )
+        raise HTTPException(status_code=503, detail="Voice transcription is temporarily unavailable. Please type the transcript manually.") from exc
     StorageService().save_audit(
         "voice.transcribe",
         filename,
@@ -474,8 +751,9 @@ def audit_logs_export(
 @router.post("/admin/knowledge")
 def upload_knowledge(request: KnowledgeUploadRequest, x_demo_token: str | None = Header(default=None)) -> dict:
     require_role({"admin"}, x_demo_token)
-    item = StorageService().add_knowledge(request.title, request.content, request.source_type)
-    RAGService().index_document(request.title, request.content, request.source_type, user_id=None, filename=None)
+    item = StorageService().add_knowledge(request.title, request.content, request.source_type, request.category, request.citation)
+    rag_source_type = f"{request.source_type}:{request.category}" if request.category else request.source_type
+    RAGService().index_document(request.title, request.content, rag_source_type, user_id=None, filename=None)
     StorageService().save_audit("admin.knowledge.create", request.title, f"knowledge {item['id']} approved")
     return item
 
@@ -486,16 +764,30 @@ def list_knowledge(x_demo_token: str | None = Header(default=None)) -> dict:
     return {"items": StorageService().list_knowledge()}
 
 
+@router.post("/admin/knowledge/categories")
+def create_knowledge_category(request: KnowledgeCategoryRequest, x_demo_token: str | None = Header(default=None)) -> dict:
+    require_role({"admin"}, x_demo_token)
+    item = StorageService().upsert_knowledge_category(request.name, request.description)
+    StorageService().save_audit("admin.knowledge-category.upsert", request.name, "category saved")
+    return item
+
+
+@router.get("/admin/knowledge/categories")
+def list_knowledge_categories(x_demo_token: str | None = Header(default=None)) -> dict:
+    require_role({"admin", "doctor", "dietician", "compliance"}, x_demo_token)
+    return {"items": StorageService().list_knowledge_categories()}
+
+
 @router.get("/doctor/reports/pending")
-def pending_reports(x_demo_token: str | None = Header(default=None)) -> dict:
+def pending_reports(x_demo_token: str | None = Header(default=None), status: str = Query(default="pending"), priority: str | None = Query(default=None)) -> dict:
     user = require_role({"doctor", "dietician"}, x_demo_token)
-    items = [item for item in StorageService().list_reports(user) if item["doctor_review_status"] == "pending"]
-    folders = [
-        {**folder, "reports": [item for item in folder["reports"] if item["doctor_review_status"] == "pending"]}
-        for folder in StorageService().list_patient_report_folders(user)
-        if folder["pending_count"]
-    ]
-    return {"items": items, "patient_folders": folders}
+    return StorageService().list_doctor_queue(user, status=status, priority=priority)
+
+
+@router.get("/doctor/reports/queue")
+def doctor_report_queue(x_demo_token: str | None = Header(default=None), status: str = Query(default="pending"), priority: str | None = Query(default=None)) -> dict:
+    user = require_role({"doctor", "dietician"}, x_demo_token)
+    return StorageService().list_doctor_queue(user, status=status, priority=priority)
 
 
 @router.post("/doctor/reports/{report_id}/assign")

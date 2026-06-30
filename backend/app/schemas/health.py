@@ -105,6 +105,10 @@ class KnowledgeSource(BaseModel):
     title: str
     source_type: str = "approved_internal_guidance"
     excerpt: str
+    citation: str | None = None
+    document_id: int | None = None
+    chunk_index: int | None = None
+    similarity_score: float | None = None
 
 
 class HealthReport(BaseModel):
@@ -132,6 +136,10 @@ class ChatRequest(BaseModel):
     question: str
     profile: HealthProfile | None = None
     consent_to_process_health_data: bool = False
+    conversation_id: int | None = None
+    report_id: int | None = None
+    voice_mode: bool = False
+    source: Literal["chat", "voice"] | None = None
 
 
 class ChatResponse(BaseModel):
@@ -140,6 +148,32 @@ class ChatResponse(BaseModel):
     doctor_consultation_required: bool
     sources: list[KnowledgeSource]
     disclaimer: str
+    conversation_stage: Literal["answered", "asking_followup", "summary_ready", "urgent"] = "answered"
+    conversation_id: int | None = None
+    user_message_id: int | None = None
+    assistant_message_id: int | None = None
+    emergency_escalation: bool = False
+    answer_source: Literal["faq", "nlp", "memory", "rag", "rules", "llm", "fallback", "urgent"] = "rules"
+    prompt_version: str | None = None
+    generation_engine: str = "rules"
+    rag_used: bool = False
+    unresolved: bool = False
+
+
+class ChatFeedbackRequest(BaseModel):
+    message_id: int
+    rating: Literal["helpful", "not_helpful", "unsafe"]
+    reason: str | None = None
+
+
+class ChatExportRequest(BaseModel):
+    conversation_id: int
+    report_id: int | None = None
+
+
+class KnowledgeCategoryRequest(BaseModel):
+    name: str = Field(min_length=2, max_length=80)
+    description: str | None = None
 
 
 class SafetyValidationResult(BaseModel):
@@ -206,6 +240,26 @@ class LoginRequest(BaseModel):
         return RegisterRequest.valid_email(value)
 
 
+class PasswordResetRequest(BaseModel):
+    email: str
+
+    @field_validator("email")
+    @classmethod
+    def valid_email(cls, value: str) -> str:
+        return RegisterRequest.valid_email(value)
+
+
+class PasswordResetConfirmRequest(BaseModel):
+    email: str
+    token: str = Field(min_length=20, max_length=128)
+    new_password: str = Field(min_length=8)
+
+    @field_validator("email")
+    @classmethod
+    def valid_email(cls, value: str) -> str:
+        return RegisterRequest.valid_email(value)
+
+
 class EmailVerificationRequest(BaseModel):
     email: str | None = None
     code: str = Field(pattern=r"^\d{6}$")
@@ -240,10 +294,12 @@ class KnowledgeUploadRequest(BaseModel):
     title: str
     content: str = Field(min_length=20)
     source_type: str = "admin_upload"
+    category: str = "General"
+    citation: str | None = None
 
 
 class DoctorReviewRequest(BaseModel):
-    status: Literal["assigned", "in_review", "needs_patient_followup", "escalated", "reviewed", "approved", "rejected", "modified", "closed"]
+    status: Literal["submitted", "pending", "assigned", "in_review", "needs_patient_followup", "escalated", "reviewed", "approved", "rejected", "modified", "closed"]
     comments: str | None = None
     final_clinical_notes: str | None = None
     clinician_signature: str | None = None
@@ -254,3 +310,7 @@ class DoctorReviewRequest(BaseModel):
 class DoctorAssignmentRequest(BaseModel):
     reviewer_id: int | None = None
     priority: Literal["routine", "priority", "urgent"] = "routine"
+
+
+class PrivacyDeleteRequest(BaseModel):
+    confirmation: Literal["DELETE"]

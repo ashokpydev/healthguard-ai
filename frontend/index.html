@@ -44,15 +44,15 @@
           <form id="register-form" class="form compact">
             <label>
               Name
-              <input id="register-name" value="Demo Patient" required />
+              <input id="register-name" placeholder="Full name" required />
             </label>
             <label>
               Email
-              <input id="register-email" type="email" value="patient@gmail.com" required />
+              <input id="register-email" type="email" placeholder="name@example.com" required />
             </label>
             <label>
               Password
-              <input id="register-password" type="password" value="secret123" required />
+              <input id="register-password" type="password" minlength="8" placeholder="At least 8 characters" required />
             </label>
             <label>
               User type
@@ -78,13 +78,14 @@
           <form id="login-form" class="form compact">
             <label>
               Email
-              <input id="login-email" type="email" value="patient@gmail.com" required />
+              <input id="login-email" type="email" placeholder="name@example.com" required />
             </label>
             <label>
               Password
-              <input id="login-password" type="password" value="secret123" required />
+              <input id="login-password" type="password" required />
             </label>
             <button type="submit">Login</button>
+            <button id="request-password-reset" class="secondary" type="button">Reset password</button>
             <button id="logout" class="secondary" type="button">Clear session</button>
           </form>
         </div>
@@ -92,8 +93,8 @@
           <p class="eyebrow">Single sign-on</p>
           <div class="sso-grid">
             <button class="sso-button google" type="button" data-provider="google"><span class="logo-google">G</span> Google</button>
-            <button class="sso-button facebook" type="button" data-provider="facebook"><span class="logo-facebook">f</span> Facebook</button>
-            <button class="sso-button instagram" type="button" data-provider="instagram"><span class="logo-instagram"></span> Instagram</button>
+            <button class="sso-button facebook" type="button" data-provider="facebook" disabled><span class="logo-facebook">f</span> Facebook</button>
+            <button class="sso-button instagram" type="button" data-provider="instagram" disabled><span class="logo-instagram"></span> Instagram</button>
           </div>
         </div>
         <div id="auth-status" class="status">Register with a valid email, confirm the 6-digit code, then enter the dashboard.</div>
@@ -118,6 +119,34 @@
       </section>
     </div>
 
+    <div id="password-reset-modal" class="modal" aria-hidden="true">
+      <div class="modal-backdrop"></div>
+      <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="password-reset-title">
+        <button id="close-password-reset-modal" class="icon-button" type="button" aria-label="Close">x</button>
+        <p class="eyebrow">Password reset</p>
+        <h2 id="password-reset-title">Reset your password</h2>
+        <p class="summary">Enter your email, request a reset token, then paste the token from your email and choose a new password.</p>
+        <label>
+          Email
+          <input id="password-reset-email" type="email" placeholder="name@example.com" />
+        </label>
+        <div class="modal-actions">
+          <button id="send-password-reset" type="button">Send reset token</button>
+        </div>
+        <label>
+          Reset token
+          <input id="password-reset-token" autocomplete="one-time-code" />
+        </label>
+        <label>
+          New password
+          <input id="password-reset-new-password" type="password" minlength="8" />
+        </label>
+        <div class="modal-actions">
+          <button id="confirm-password-reset" type="button">Update password</button>
+        </div>
+      </section>
+    </div>
+
     <main id="app-shell" class="shell requires-auth">
       <nav class="app-menu navbar navbar-expand-lg" aria-label="Workspace menu">
         <div class="menu-brand">
@@ -127,7 +156,12 @@
             <span>Clinical safety workspace</span>
           </div>
         </div>
-        <div class="menu-actions nav nav-pills">
+        <button id="mobile-menu-toggle" class="mobile-menu-toggle" type="button" aria-label="Open workspace menu" aria-expanded="false" aria-controls="workspace-menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        <div id="workspace-menu" class="menu-actions nav nav-pills">
           <button class="menu-button nav-link active" type="button" data-scroll-target="home-panel">Home</button>
           <button class="menu-button nav-link" type="button" data-scroll-target="assessment-panel">Assessment</button>
           <button class="menu-button nav-link" type="button" data-scroll-target="voice-panel">Voice</button>
@@ -135,13 +169,14 @@
           <button class="menu-button nav-link" type="button" data-scroll-target="reports-panel">Reports</button>
           <button class="menu-button nav-link role-only" type="button" data-scroll-target="role-panel">Role tools</button>
           <button id="open-tour" class="menu-button nav-link" type="button">Tour</button>
+          <button id="menu-logout" class="menu-button nav-link mobile-only" type="button">Logout</button>
         </div>
       </nav>
 
       <section id="home-panel" class="panel session-panel shadow-lg">
         <div class="hero-content">
-          <h1 id="home-title">Your preventive health workspace</h1>
-          <p id="home-subtitle" class="summary">Complete a guided assessment, attach optional health documents, and generate a doctor-ready educational report.</p>
+          <h1 id="home-title">HealthGuard AI dashboard</h1>
+          <p id="home-subtitle" class="summary">HealthGuard AI helps you ask health questions safely, complete guided risk assessments, upload medical documents, and generate doctor-ready educational reports from one clinical workspace.</p>
           <div class="hero-tags">
             <button class="role-only" type="button" data-scroll-target="role-panel">Role workflows</button>
             <button type="button" data-scroll-target="assessment-panel">Self-service intake</button>
@@ -378,7 +413,7 @@
           <span id="voice-pill" class="pill">Idle</span>
         </div>
         <p class="summary">
-          Use voice to describe symptoms, lifestyle, or uploaded report questions. The answer is generated with the same safety checks and supporting knowledge used by the chatbot.
+          Speak symptoms, lifestyle details, or report questions. You can also type the transcript manually and ask HealthGuard.
         </p>
         <div class="voice-controls">
           <button id="voice-start" type="button" class="voice-mic-button" aria-pressed="false">
@@ -449,6 +484,14 @@
             Knowledge title
             <input id="knowledge-title" value="Heat safety guidance" />
           </label>
+          <label>
+            Category
+            <input id="knowledge-category" value="Heat safety" />
+          </label>
+          <label>
+            Citation
+            <input id="knowledge-citation" placeholder="Clinic SOP v1, CDC heat guidance, etc." />
+          </label>
           <label class="wide">
             Approved guidance
             <textarea id="knowledge-content" rows="3">During hot weather, maintain hydration, avoid peak heat exposure, and seek medical care for severe dehydration symptoms.</textarea>
@@ -472,6 +515,43 @@
           Enter details and generate a report. Emergency red flags will be surfaced immediately.
         </div>
       </section>
+      <aside id="chat-dialog" class="chat-dialog" aria-hidden="true">
+        <div class="chat-dialog-header">
+          <div class="chat-title">
+            <img class="chatbot-logo" src="/static/assets/chatbot-logo.png" alt="" aria-hidden="true" />
+            <div>
+              <p class="eyebrow">Health chatbot</p>
+              <h2>Ask HealthGuard</h2>
+            </div>
+          </div>
+          <div class="chat-header-actions">
+            <button id="chat-clear" class="chat-clear-button" type="button">Clear</button>
+            <button id="chat-close" class="icon-button" type="button" aria-label="Minimize chatbot">x</button>
+          </div>
+        </div>
+        <p class="summary">
+          Ask simple health doubts. Answers are short, safe, and educational.
+        </p>
+        <div class="chat-dialog-scroll">
+          <div id="chat-history" class="chat-history"></div>
+          <div id="chat-urgent" class="chat-urgent" hidden>
+            Urgent symptoms were detected. Please seek emergency care now if symptoms are severe, sudden, or worsening.
+          </div>
+          <div id="chat-status" class="report compact-report">
+            Type a health question below.
+          </div>
+        </div>
+        <label class="chat-question-label" for="chat-question">Your question</label>
+        <div class="chat-composer">
+          <textarea id="chat-question" rows="2" placeholder="Type a health question"></textarea>
+          <button id="chat-submit" class="chat-send-button" type="button" aria-label="Send question">
+            <span class="chat-send-symbol" aria-hidden="true"></span>
+          </button>
+        </div>
+      </aside>
+      <button id="chat-launcher" class="chat-launcher" type="button" aria-label="Open HealthGuard chatbot" aria-controls="chat-dialog" aria-expanded="false">
+        <img class="chatbot-logo chatbot-logo-small" src="/static/assets/chatbot-logo.png" alt="" aria-hidden="true" />
+      </button>
     </main>
 
     <div id="tour-modal" class="modal tour-modal" aria-hidden="true">

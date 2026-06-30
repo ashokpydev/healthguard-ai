@@ -12,8 +12,8 @@ from backend.app.schemas.health import KnowledgeSource
 
 class RAGService:
     embedding_dimensions = 128
-    chunk_words = 140
-    chunk_overlap = 30
+    chunk_words = 180
+    chunk_overlap = 40
 
     def __init__(self) -> None:
         init_db()
@@ -26,6 +26,7 @@ class RAGService:
         chunks = self._chunk_text(cleaned)
         timestamp = now_iso()
         with connect() as conn:
+            use_pgvector = self._pgvector_available(conn)
             existing = conn.execute(
                 """
                 SELECT id FROM rag_documents
@@ -46,21 +47,43 @@ class RAGService:
                 )
                 document_id = cursor.lastrowid
             for index, chunk in enumerate(chunks):
+                embedding = self.embed(chunk["content"])
+                citation_label = f"{title} chunk {index + 1}"
+                metadata = {
+                    "filename": filename,
+                    "char_start": chunk["char_start"],
+                    "char_end": chunk["char_end"],
+                    "chunk_words": len(chunk["content"].split()),
+                    "embedding_provider": "local_hashing_embedding",
+                    "vector_backend": "pgvector" if use_pgvector else "json_cosine_fallback",
+                }
                 conn.execute(
                     """
-                    INSERT INTO rag_chunks (document_id, user_id, chunk_index, content, embedding_json, token_count, created_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO rag_chunks (
+                        document_id, user_id, chunk_index, content, embedding_json, char_start, char_end,
+                        citation_label, metadata_json, token_count, created_at
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         document_id,
                         user_id,
                         index,
-                        chunk,
-                        json_dumps(self.embed(chunk)),
-                        len(chunk.split()),
+                        chunk["content"],
+                        json_dumps(embedding),
+                        chunk["char_start"],
+                        chunk["char_end"],
+                        citation_label,
+                        json_dumps(metadata),
+                        len(chunk["content"].split()),
                         timestamp,
                     ),
                 )
+                if use_pgvector:
+                    conn.execute(
+                        "UPDATE rag_chunks SET embedding_vector = ?::vector WHERE document_id = ? AND chunk_index = ?",
+                        (self._vector_literal(embedding), document_id, index),
+                    )
         return {"document_id": document_id, "chunk_count": len(chunks), "content_hash": content_hash}
 
     def retrieve(self, query: str | None, user_id: int | None = None, limit: int = 6) -> list[KnowledgeSource]:
@@ -69,32 +92,62 @@ class RAGService:
             query_text = "preventive health safety symptoms lifestyle diet emergency"
         query_embedding = self.embed(query_text)
         with connect() as conn:
-            rows = conn.execute(
-                """
-                SELECT rag_chunks.content, rag_chunks.embedding_json, rag_chunks.chunk_index,
-                       rag_documents.title, rag_documents.source_type, rag_documents.user_id
-                FROM rag_chunks
-                JOIN rag_documents ON rag_documents.id = rag_chunks.document_id
-                WHERE rag_documents.user_id IS NULL OR rag_documents.user_id = ?
-                ORDER BY rag_documents.user_id DESC, rag_documents.id DESC, rag_chunks.chunk_index ASC
-                LIMIT 500
-                """,
-                (user_id,),
-            ).fetchall()
+            if self._pgvector_available(conn):
+                rows = self._retrieve_pgvector(conn, query_embedding, user_id, limit)
+                return self._sources_from_ranked_rows([(row["similarity"], row) for row in rows], limit)
+            rows = conn.execute(self._candidate_sql(), (user_id,)).fetchall()
         ranked: list[tuple[float, dict]] = []
         for row in rows:
             score = self.cosine(query_embedding, json_loads(row["embedding_json"]))
             if score > 0:
                 ranked.append((score, row))
         ranked.sort(key=lambda item: item[0], reverse=True)
+        return self._sources_from_ranked_rows(ranked, limit)
+
+    def _candidate_sql(self) -> str:
+        return """
+            SELECT rag_chunks.document_id, rag_chunks.content, rag_chunks.embedding_json, rag_chunks.chunk_index,
+                   rag_chunks.citation_label, rag_chunks.char_start, rag_chunks.char_end,
+                   rag_documents.title, rag_documents.source_type, rag_documents.user_id
+            FROM rag_chunks
+            JOIN rag_documents ON rag_documents.id = rag_chunks.document_id
+            WHERE rag_documents.user_id IS NULL OR rag_documents.user_id = ?
+            ORDER BY rag_documents.user_id DESC, rag_documents.id DESC, rag_chunks.chunk_index ASC
+            LIMIT 500
+        """
+
+    def _retrieve_pgvector(self, conn, query_embedding: list[float], user_id: int | None, limit: int) -> list[dict]:
+        rows = conn.execute(
+            """
+            SELECT rag_chunks.document_id, rag_chunks.content, rag_chunks.embedding_json, rag_chunks.chunk_index,
+                   rag_chunks.citation_label, rag_chunks.char_start, rag_chunks.char_end,
+                   rag_documents.title, rag_documents.source_type, rag_documents.user_id,
+                   1 - (rag_chunks.embedding_vector <=> ?::vector) AS similarity
+            FROM rag_chunks
+            JOIN rag_documents ON rag_documents.id = rag_chunks.document_id
+            WHERE (rag_documents.user_id IS NULL OR rag_documents.user_id = ?)
+              AND rag_chunks.embedding_vector IS NOT NULL
+            ORDER BY rag_chunks.embedding_vector <=> ?::vector
+            LIMIT ?
+            """,
+            (self._vector_literal(query_embedding), user_id, self._vector_literal(query_embedding), limit),
+        ).fetchall()
+        return rows
+
+    def _sources_from_ranked_rows(self, ranked: list[tuple[float, dict]], limit: int) -> list[KnowledgeSource]:
         sources: list[KnowledgeSource] = []
-        for score, row in ranked[:limit]:
+        for display_index, (score, row) in enumerate(ranked[:limit], start=1):
             source_type = "patient_document_rag" if row.get("user_id") else row["source_type"]
+            citation = f"S{display_index}"
             sources.append(
                 KnowledgeSource(
-                    title=f"{row['title']} (score {score:.2f})",
+                    title=f"[{citation}] {row['title']}",
                     source_type=source_type,
                     excerpt=row["content"],
+                    citation=citation,
+                    document_id=row.get("document_id"),
+                    chunk_index=row.get("chunk_index"),
+                    similarity_score=round(float(score), 4),
                 )
             )
         return sources
@@ -118,7 +171,7 @@ class RAGService:
         return {
             "enabled": True,
             "embedding_provider": "local_hashing_embedding",
-            "vector_store": "database_embedding_json",
+            "vector_store": self._vector_store_name(),
             "semantic_similarity": "cosine",
             "chunk_words": self.chunk_words,
             "chunk_overlap": self.chunk_overlap,
@@ -147,22 +200,92 @@ class RAGService:
             return 0.0
         return sum(a * b for a, b in zip(left, right))
 
-    def _chunk_text(self, text: str) -> list[str]:
+    def _chunk_text(self, text: str) -> list[dict]:
+        segments = self._semantic_segments(text)
+        if not segments:
+            return [{"content": text, "char_start": 0, "char_end": len(text)}]
+        chunks: list[dict] = []
+        current: list[tuple[str, int, int]] = []
+        current_words = 0
+        previous_tail: list[tuple[str, int, int]] = []
+
+        def flush() -> None:
+            nonlocal current, current_words, previous_tail
+            if not current:
+                return
+            content = " ".join(segment[0] for segment in current).strip()
+            if content:
+                chunks.append(
+                    {
+                        "content": content,
+                        "char_start": current[0][1],
+                        "char_end": current[-1][2],
+                    }
+                )
+            overlap_words = 0
+            tail: list[tuple[str, int, int]] = []
+            for segment in reversed(current):
+                tail.insert(0, segment)
+                overlap_words += len(segment[0].split())
+                if overlap_words >= self.chunk_overlap:
+                    break
+            previous_tail = tail
+            current = list(previous_tail)
+            current_words = sum(len(segment[0].split()) for segment in current)
+
+        for segment in segments:
+            words = len(segment[0].split())
+            if current and current_words + words > self.chunk_words:
+                flush()
+            current.append(segment)
+            current_words += words
+        flush()
+        if chunks:
+            return chunks
         words = text.split()
         if len(words) <= self.chunk_words:
-            return [text]
-        chunks: list[str] = []
+            return [{"content": text, "char_start": 0, "char_end": len(text)}]
         step = max(1, self.chunk_words - self.chunk_overlap)
         for start in range(0, len(words), step):
-            chunk = " ".join(words[start : start + self.chunk_words]).strip()
-            if chunk:
-                chunks.append(chunk)
+            chunk_text = " ".join(words[start : start + self.chunk_words]).strip()
+            if chunk_text:
+                chunks.append({"content": chunk_text, "char_start": 0, "char_end": len(text)})
             if start + self.chunk_words >= len(words):
                 break
         return chunks
+
+    def _semantic_segments(self, text: str) -> list[tuple[str, int, int]]:
+        segments: list[tuple[str, int, int]] = []
+        for match in re.finditer(r"[^.!?\n]+(?:[.!?]+|\n+|$)", text):
+            segment = match.group(0).strip()
+            if segment:
+                segments.append((segment, match.start(), match.end()))
+        return segments
 
     def _clean_text(self, text: str) -> str:
         return re.sub(r"\s+", " ", text or "").strip()
 
     def _tokens(self, text: str) -> list[str]:
         return [token for token in re.findall(r"[a-z0-9]+", text.lower()) if len(token) > 1]
+
+    def _vector_literal(self, embedding: list[float]) -> str:
+        return "[" + ",".join(str(value) for value in embedding) + "]"
+
+    def _pgvector_available(self, conn) -> bool:
+        if getattr(conn, "backend", None) != "postgres":
+            return False
+        row = conn.execute(
+            """
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_name = ? AND column_name = ?
+            """,
+            ("rag_chunks", "embedding_vector"),
+        ).fetchone()
+        return bool(row)
+
+    def _vector_store_name(self) -> str:
+        with connect() as conn:
+            if self._pgvector_available(conn):
+                return "postgres_pgvector"
+        return "database_embedding_json_fallback"

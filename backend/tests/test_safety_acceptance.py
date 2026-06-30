@@ -237,6 +237,26 @@ def test_voice_transcription_uses_huggingface_asr(monkeypatch):
     assert captured["payload"] == b"demo-audio-bytes" * 120
 
 
+def test_voice_transcription_failure_returns_user_safe_message(monkeypatch):
+    monkeypatch.setenv("HF_TOKEN", "hf_voice_test")
+    monkeypatch.setattr("backend.app.services.speech_service.SpeechService._token", lambda self: "hf_voice_test")
+
+    def failing_transcribe(self, filename, content_type, payload):
+        raise RuntimeError("All Hugging Face ASR models failed. internal provider details")
+
+    monkeypatch.setattr("backend.app.services.speech_service.SpeechService.transcribe", failing_transcribe)
+    patient = register_user("patient")
+    response = client.post(
+        "/api/voice/transcribe",
+        headers={"X-Demo-Token": patient["demo_token"]},
+        files={"audio": ("voice-input.webm", b"demo-audio-bytes" * 120, "audio/webm")},
+    )
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == "Voice transcription is temporarily unavailable. Please type the transcript manually."
+    assert "Hugging Face" not in response.json()["detail"]
+
+
 def test_report_generation_stops_when_configured_llm_fails():
     class FailingLLM:
         def configured(self):
@@ -348,6 +368,24 @@ def test_uploaded_documents_are_indexed_for_user_isolated_semantic_rag():
     assert own_status.status_code == 200
     assert own_status.json()["user_documents"] >= 1
     assert own_status.json()["user_chunks"] >= 1
+    assert own_status.json()["vector_store"] in {"database_embedding_json_fallback", "postgres_pgvector"}
+
+    with connect() as conn:
+        chunk = conn.execute(
+            """
+            SELECT rag_chunks.citation_label, rag_chunks.metadata_json, rag_chunks.char_end, rag_chunks.embedding_json
+            FROM rag_chunks
+            JOIN rag_documents ON rag_documents.id = rag_chunks.document_id
+            WHERE rag_documents.title = ? AND rag_documents.user_id = ?
+            ORDER BY rag_documents.id DESC, rag_chunks.chunk_index
+            LIMIT 1
+            """,
+            ("thyroid-note.txt", patient_a["id"]),
+        ).fetchone()
+    assert chunk["citation_label"] == "thyroid-note.txt chunk 1"
+    assert "local_hashing_embedding" in chunk["metadata_json"]
+    assert chunk["char_end"] > 0
+    assert chunk["embedding_json"].startswith("[")
 
     own_report = client.post(
         "/api/reports/generate",
@@ -362,6 +400,8 @@ def test_uploaded_documents_are_indexed_for_user_isolated_semantic_rag():
     assert own_report.status_code == 200
     own_sources = own_report.json()["report"]["sources"]
     assert any(source["source_type"] == "patient_document_rag" and "Thyroid" in source["excerpt"] for source in own_sources)
+    assert all(source["citation"] for source in own_sources)
+    assert any(source["similarity_score"] is not None for source in own_sources)
 
     other_report = client.post(
         "/api/reports/generate",
@@ -437,7 +477,592 @@ def test_missing_information_asks_follow_up():
     )
 
     assert response.status_code == 200
-    assert "more information" in response.json()["answer"].lower()
+    assert "how long" in response.json()["answer"].lower()
+
+
+def test_chat_history_is_scoped_to_logged_in_user_and_conversation():
+    patient_one = register_user("patient")
+    patient_two = register_user("patient")
+
+    first = client.post(
+        "/api/chat/health-question",
+        headers={"X-Demo-Token": patient_one["demo_token"]},
+        json={"question": "What should I eat today?", "consent_to_process_health_data": True},
+    )
+    assert first.status_code == 200
+    conversation_id = first.json()["conversation_id"]
+
+    owner_history = client.get(
+        "/api/chat/conversations",
+        headers={"X-Demo-Token": patient_one["demo_token"]},
+    )
+    assert owner_history.status_code == 200
+    assert any(item["id"] == conversation_id for item in owner_history.json()["items"])
+
+    other_history = client.get(
+        "/api/chat/conversations",
+        headers={"X-Demo-Token": patient_two["demo_token"]},
+    )
+    assert other_history.status_code == 200
+    assert all(item["id"] != conversation_id for item in other_history.json()["items"])
+
+    cross_user_write = client.post(
+        "/api/chat/health-question",
+        headers={"X-Demo-Token": patient_two["demo_token"]},
+        json={
+            "question": "Continue this chat",
+            "conversation_id": conversation_id,
+            "consent_to_process_health_data": True,
+        },
+    )
+    assert cross_user_write.status_code == 404
+
+
+def test_chat_memory_uses_previous_message_for_same_user_conversation():
+    patient = register_user("patient")
+    first = client.post(
+        "/api/chat/health-question",
+        headers={"X-Demo-Token": patient["demo_token"]},
+        json={"question": "What should I track for fever?", "consent_to_process_health_data": True},
+    )
+    assert first.status_code == 200
+
+    follow_up = client.post(
+        "/api/chat/health-question",
+        headers={"X-Demo-Token": patient["demo_token"]},
+        json={
+            "question": "What was my previous question?",
+            "conversation_id": first.json()["conversation_id"],
+            "consent_to_process_health_data": True,
+        },
+    )
+    assert follow_up.status_code == 200
+    assert "what should i track for fever" in follow_up.json()["answer"].lower()
+
+
+def test_chat_memory_uses_latest_messages_not_oldest_when_conversation_grows():
+    patient = register_user("patient")
+    first = client.post(
+        "/api/chat/health-question",
+        headers={"X-Demo-Token": patient["demo_token"]},
+        json={"question": "Tracking note 0", "consent_to_process_health_data": True},
+    )
+    assert first.status_code == 200
+    conversation_id = first.json()["conversation_id"]
+
+    for index in range(1, 16):
+        response = client.post(
+            "/api/chat/health-question",
+            headers={"X-Demo-Token": patient["demo_token"]},
+            json={
+                "question": f"Tracking note {index}",
+                "conversation_id": conversation_id,
+                "consent_to_process_health_data": True,
+            },
+        )
+        assert response.status_code == 200
+
+    follow_up = client.post(
+        "/api/chat/health-question",
+        headers={"X-Demo-Token": patient["demo_token"]},
+        json={
+            "question": "What was my previous question?",
+            "conversation_id": conversation_id,
+            "consent_to_process_health_data": True,
+        },
+    )
+
+    assert follow_up.status_code == 200
+    assert "tracking note 15" in follow_up.json()["answer"].lower()
+    assert "tracking note 0" not in follow_up.json()["answer"].lower()
+
+
+def test_chat_memory_does_not_mix_old_conversations_into_active_chat():
+    patient = register_user("patient")
+    old_chat = client.post(
+        "/api/chat/health-question",
+        headers={"X-Demo-Token": patient["demo_token"]},
+        json={"question": "Old conversation allergy question", "consent_to_process_health_data": True},
+    )
+    assert old_chat.status_code == 200
+
+    new_chat = client.post(
+        "/api/chat/health-question",
+        headers={"X-Demo-Token": patient["demo_token"]},
+        json={"question": "New conversation fever question", "consent_to_process_health_data": True},
+    )
+    assert new_chat.status_code == 200
+
+    follow_up = client.post(
+        "/api/chat/health-question",
+        headers={"X-Demo-Token": patient["demo_token"]},
+        json={
+            "question": "What was my previous question?",
+            "conversation_id": new_chat.json()["conversation_id"],
+            "consent_to_process_health_data": True,
+        },
+    )
+
+    assert follow_up.status_code == 200
+    answer = follow_up.json()["answer"].lower()
+    assert "new conversation fever question" in answer
+    assert "old conversation allergy question" not in answer
+
+
+def test_chat_answers_are_concise_by_default():
+    patient = register_user("patient")
+    response = client.post(
+        "/api/chat/health-question",
+        headers={"X-Demo-Token": patient["demo_token"]},
+        json={"question": "What should I eat today?", "consent_to_process_health_data": True},
+    )
+
+    assert response.status_code == 200
+    answer = response.json()["answer"]
+    assert len(answer.split()) <= 18
+    assert len([line for line in answer.splitlines() if line.strip()]) <= 3
+
+
+def test_chatbot_explains_uploadable_docs_and_expected_answers():
+    patient = register_user("patient")
+    response = client.post(
+        "/api/chat/health-question",
+        headers={"X-Demo-Token": patient["demo_token"]},
+        json={
+            "question": "What kind of docs I can upload and what kind of answer I can expect from chatbot?",
+            "consent_to_process_health_data": True,
+        },
+    )
+
+    assert response.status_code == 200
+    answer = response.json()["answer"].lower()
+    assert "lab reports" in answer
+    assert "prescriptions" in answer
+    assert "follow-up questions" in answer
+    assert "doctor-visit prep" in answer
+    assert "upload reports so answers" not in answer
+    assert response.json()["answer_source"] == "faq"
+    assert response.json()["prompt_version"]
+
+
+def test_chatbot_upload_docs_question_does_not_use_old_generic_answer():
+    patient = register_user("patient")
+    response = client.post(
+        "/api/chat/health-question",
+        headers={"X-Demo-Token": patient["demo_token"]},
+        json={"question": "What kind of docs I can upload?", "consent_to_process_health_data": True},
+    )
+
+    assert response.status_code == 200
+    answer = response.json()["answer"].lower()
+    assert "lab reports" in answer
+    assert "doctor notes" in answer
+    assert "upload reports so answers" not in answer
+
+
+def test_chatbot_better_suggestion_request_uses_nlp_checklist():
+    patient = register_user("patient")
+    response = client.post(
+        "/api/chat/health-question",
+        headers={"X-Demo-Token": patient["demo_token"]},
+        json={"question": "What kind of information is needed for better suggestions?", "consent_to_process_health_data": True},
+    )
+
+    assert response.status_code == 200
+    answer = response.json()["answer"].lower()
+    assert "symptom" in answer
+    assert "duration" in answer
+    assert "severity" in answer
+    assert "existing conditions" in answer
+    assert "current medicines" in answer
+    assert "breathing trouble" in answer
+    assert "need more information" not in answer
+
+
+def test_chatbot_fever_asks_specific_nlp_followup():
+    patient = register_user("patient")
+    response = client.post(
+        "/api/chat/health-question",
+        headers={"X-Demo-Token": patient["demo_token"]},
+        json={"question": "I have fever.", "consent_to_process_health_data": True},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["conversation_stage"] == "asking_followup"
+    assert "how many days" in body["answer"].lower()
+    assert "temperature" in body["answer"].lower()
+
+
+def test_chatbot_fever_rash_with_duration_asks_rash_followup():
+    patient = register_user("patient")
+    response = client.post(
+        "/api/chat/health-question",
+        headers={"X-Demo-Token": patient["demo_token"]},
+        json={"question": "I have fever and rashes for 2 days.", "consent_to_process_health_data": True},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["conversation_stage"] == "asking_followup"
+    assert "rash spreading" in body["answer"].lower()
+
+
+def test_chatbot_understands_short_followup_answers_for_fever_diet():
+    patient = register_user("patient")
+    first = client.post(
+        "/api/chat/health-question",
+        headers={"X-Demo-Token": patient["demo_token"]},
+        json={"question": "I have the fever, what type of dite I need to follow", "consent_to_process_health_data": True},
+    )
+    assert first.status_code == 200
+    conversation_id = first.json()["conversation_id"]
+
+    second = client.post(
+        "/api/chat/health-question",
+        headers={"X-Demo-Token": patient["demo_token"]},
+        json={"question": "3 days", "conversation_id": conversation_id, "consent_to_process_health_data": True},
+    )
+    assert second.status_code == 200
+    assert second.json()["conversation_stage"] == "answered"
+    assert "light food" in second.json()["answer"].lower()
+    assert "fluids" in second.json()["answer"].lower()
+
+    third = client.post(
+        "/api/chat/health-question",
+        headers={"X-Demo-Token": patient["demo_token"]},
+        json={"question": "5", "conversation_id": conversation_id, "consent_to_process_health_data": True},
+    )
+    assert third.status_code == 200
+    body = third.json()
+    assert body["conversation_stage"] == "answered"
+    assert "how severe" not in body["answer"].lower()
+    assert "need more information" not in body["answer"].lower()
+
+
+def test_chatbot_recovers_typo_cough_and_answers_diet_from_context():
+    patient = register_user("patient")
+    first = client.post(
+        "/api/chat/health-question",
+        headers={"X-Demo-Token": patient["demo_token"]},
+        json={"question": "I have the caugh", "consent_to_process_health_data": True},
+    )
+    assert first.status_code == 200
+    conversation_id = first.json()["conversation_id"]
+    assert "how many days" in first.json()["answer"].lower()
+
+    second = client.post(
+        "/api/chat/health-question",
+        headers={"X-Demo-Token": patient["demo_token"]},
+        json={"question": "since 3 days", "conversation_id": conversation_id, "consent_to_process_health_data": True},
+    )
+    assert second.status_code == 200
+
+    third = client.post(
+        "/api/chat/health-question",
+        headers={"X-Demo-Token": patient["demo_token"]},
+        json={"question": "what kind of diet needs follow", "conversation_id": conversation_id, "consent_to_process_health_data": True},
+    )
+    assert third.status_code == 200
+    body = third.json()
+    assert body["conversation_stage"] == "answered"
+    assert "warm fluids" in body["answer"].lower()
+    assert "soup" in body["answer"].lower()
+    assert "what is your age" not in body["answer"].lower()
+    assert "need more information" not in body["answer"].lower()
+
+
+def test_chatbot_prioritizes_latest_vomiting_and_motions_over_old_cough_context():
+    patient = register_user("patient")
+    first = client.post(
+        "/api/chat/health-question",
+        headers={"X-Demo-Token": patient["demo_token"]},
+        json={"question": "I have the caugh", "consent_to_process_health_data": True},
+    )
+    assert first.status_code == 200
+    conversation_id = first.json()["conversation_id"]
+
+    vomiting = client.post(
+        "/api/chat/health-question",
+        headers={"X-Demo-Token": patient["demo_token"]},
+        json={"question": "I got wamitings", "conversation_id": conversation_id, "consent_to_process_health_data": True},
+    )
+    assert vomiting.status_code == 200
+    vomiting_answer = vomiting.json()["answer"].lower()
+    assert "how long" in vomiting_answer
+    assert "fluids" in vomiting_answer
+    assert "cough" not in vomiting_answer
+
+    motions = client.post(
+        "/api/chat/health-question",
+        headers={"X-Demo-Token": patient["demo_token"]},
+        json={"question": "what is the reason for motions", "conversation_id": conversation_id, "consent_to_process_health_data": True},
+    )
+    assert motions.status_code == 200
+    motions_answer = motions.json()["answer"].lower()
+    assert "loose motions" in motions_answer
+    assert "unsafe food" in motions_answer or "infection" in motions_answer
+    assert "cough" not in motions_answer
+    assert "warm fluids" not in motions_answer
+
+
+def test_chatbot_medicine_question_asks_safe_nlp_details():
+    patient = register_user("patient")
+    response = client.post(
+        "/api/chat/health-question",
+        headers={"X-Demo-Token": patient["demo_token"]},
+        json={"question": "Can I take medicine?", "consent_to_process_health_data": True},
+    )
+
+    assert response.status_code == 200
+    answer = response.json()["answer"].lower()
+    assert "cannot recommend medication directly" in answer
+    assert "age" in answer
+    assert "symptom duration" in answer
+    assert "allergies" in answer
+    assert "dosage" not in answer
+    assert response.json()["answer_source"] == "nlp"
+
+
+def test_voice_style_medication_question_stays_lightweight_and_safe():
+    patient = register_user("patient")
+    response = client.post(
+        "/api/chat/health-question",
+        headers={"X-Demo-Token": patient["demo_token"]},
+        json={"question": "Medication for cough, cold and fever 103 temperature.", "consent_to_process_health_data": True},
+    )
+
+    assert response.status_code == 200
+    answer = response.json()["answer"].lower()
+    assert "cannot recommend" in answer
+    assert "age" in answer
+    assert "allergies" in answer
+    assert "report" not in answer
+    assert len([line for line in response.json()["answer"].splitlines() if line.strip()]) <= 3
+
+
+def test_voice_style_fever_rash_question_gets_short_doctor_guidance():
+    patient = register_user("patient")
+    response = client.post(
+        "/api/chat/health-question",
+        headers={"X-Demo-Token": patient["demo_token"]},
+        json={"question": "I have fever and rashes. What should I do?", "consent_to_process_health_data": True},
+    )
+
+    assert response.status_code == 200
+    answer = response.json()["answer"].lower()
+    assert "how many days" in answer
+    assert "temperature" in answer
+    assert "report" not in answer
+    assert len([line for line in response.json()["answer"].splitlines() if line.strip()]) <= 3
+
+
+def test_voice_mode_asks_one_followup_then_summarizes_from_memory():
+    patient = register_user("patient")
+    first = client.post(
+        "/api/chat/health-question",
+        headers={"X-Demo-Token": patient["demo_token"]},
+        json={
+            "question": "I have fever and rashes. Can I take medicine?",
+            "consent_to_process_health_data": True,
+            "voice_mode": True,
+            "source": "voice",
+        },
+    )
+    assert first.status_code == 200
+    body = first.json()
+    assert body["conversation_stage"] == "asking_followup"
+    assert "cannot recommend medication" in body["answer"].lower()
+    assert body["answer"].count("?") == 1
+    assert "report" not in body["answer"].lower()
+
+    second = client.post(
+        "/api/chat/health-question",
+        headers={"X-Demo-Token": patient["demo_token"]},
+        json={
+            "question": "Fever is two days and rash is itchy.",
+            "conversation_id": body["conversation_id"],
+            "consent_to_process_health_data": True,
+            "voice_mode": True,
+            "source": "voice",
+        },
+    )
+    assert second.status_code == 200
+    assert second.json()["conversation_stage"] == "asking_followup"
+    assert second.json()["answer"].count("?") == 1
+
+    final = client.post(
+        "/api/chat/health-question",
+        headers={"X-Demo-Token": patient["demo_token"]},
+        json={
+            "question": "No breathing trouble, no bleeding, no new food.",
+            "conversation_id": body["conversation_id"],
+            "consent_to_process_health_data": True,
+            "voice_mode": True,
+            "source": "voice",
+        },
+    )
+    assert final.status_code == 200
+    final_body = final.json()
+    assert final_body["conversation_stage"] == "summary_ready"
+    assert "based on what you shared" in final_body["answer"].lower()
+    assert "drink water" in final_body["answer"].lower()
+    assert "doctor" not in final_body["answer"].lower() or "clinician" in final_body["answer"].lower()
+    assert "report" not in final_body["answer"].lower()
+
+
+def test_voice_mode_chat_history_stays_user_isolated():
+    patient_one = register_user("patient")
+    patient_two = register_user("patient")
+    first = client.post(
+        "/api/chat/health-question",
+        headers={"X-Demo-Token": patient_one["demo_token"]},
+        json={
+            "question": "I have cough and cold.",
+            "consent_to_process_health_data": True,
+            "voice_mode": True,
+            "source": "voice",
+        },
+    )
+    assert first.status_code == 200
+    conversation_id = first.json()["conversation_id"]
+
+    blocked = client.post(
+        "/api/chat/health-question",
+        headers={"X-Demo-Token": patient_two["demo_token"]},
+        json={
+            "question": "Two days.",
+            "conversation_id": conversation_id,
+            "consent_to_process_health_data": True,
+            "voice_mode": True,
+            "source": "voice",
+        },
+    )
+    assert blocked.status_code == 404
+
+
+def test_voice_mode_cough_cold_medication_regression_stays_conversational():
+    patient = register_user("patient")
+    response = client.post(
+        "/api/chat/health-question",
+        headers={"X-Demo-Token": patient["demo_token"]},
+        json={
+            "question": "I have cough and cold. Give me medicine.",
+            "consent_to_process_health_data": True,
+            "voice_mode": True,
+            "source": "voice",
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["conversation_stage"] == "asking_followup"
+    assert "cannot recommend medication" in body["answer"].lower()
+    assert "age" in body["answer"].lower()
+    assert "symptom duration" in body["answer"].lower()
+    assert "allergies" in body["answer"].lower()
+    assert body["answer"].count("?") == 1
+    assert "dosage" not in body["answer"].lower()
+    assert "report" not in body["answer"].lower()
+
+
+def test_voice_mode_new_conversation_ignores_old_text_chat_memory():
+    patient = register_user("patient")
+    chat = client.post(
+        "/api/chat/health-question",
+        headers={"X-Demo-Token": patient["demo_token"]},
+        json={"question": "I have fever for two days and no breathing trouble.", "consent_to_process_health_data": True},
+    )
+    assert chat.status_code == 200
+
+    voice = client.post(
+        "/api/chat/health-question",
+        headers={"X-Demo-Token": patient["demo_token"]},
+        json={
+            "question": "I have fever and rashes.",
+            "consent_to_process_health_data": True,
+            "voice_mode": True,
+            "source": "voice",
+        },
+    )
+    assert voice.status_code == 200
+    assert voice.json()["conversation_stage"] == "asking_followup"
+    assert "how many days" in voice.json()["answer"].lower()
+
+
+def test_chat_export_is_scoped_to_logged_in_user():
+    patient_one = register_user("patient")
+    patient_two = register_user("patient")
+    first = client.post(
+        "/api/chat/health-question",
+        headers={"X-Demo-Token": patient_one["demo_token"]},
+        json={"question": "What documents can I upload?", "consent_to_process_health_data": True},
+    )
+    assert first.status_code == 200
+    conversation_id = first.json()["conversation_id"]
+
+    owner_export = client.post(
+        "/api/chat/export",
+        headers={"X-Demo-Token": patient_one["demo_token"]},
+        json={"conversation_id": conversation_id},
+    )
+    assert owner_export.status_code == 200
+    assert "What documents can I upload" in owner_export.json()["content"]
+
+    blocked_export = client.post(
+        "/api/chat/export",
+        headers={"X-Demo-Token": patient_two["demo_token"]},
+        json={"conversation_id": conversation_id},
+    )
+    assert blocked_export.status_code == 404
+
+
+def test_chat_analytics_tracks_faq_and_unresolved_without_cross_user_access():
+    patient = register_user("patient")
+    faq = client.post(
+        "/api/chat/health-question",
+        headers={"X-Demo-Token": patient["demo_token"]},
+        json={"question": "What does HealthGuard do?", "consent_to_process_health_data": True},
+    )
+    unresolved = client.post(
+        "/api/chat/health-question",
+        headers={"X-Demo-Token": patient["demo_token"]},
+        json={"question": "pain?", "consent_to_process_health_data": True},
+    )
+    assert faq.status_code == 200
+    assert unresolved.status_code == 200
+
+    analytics = client.get("/api/chat/analytics", headers={"X-Demo-Token": patient["demo_token"]})
+    assert analytics.status_code == 200
+    sources = {item["answer_source"]: item["count"] for item in analytics.json()["by_answer_source"]}
+    assert sources.get("faq", 0) >= 1
+    assert analytics.json()["unresolved"] >= 1
+
+
+def test_feedback_is_scoped_to_message_owner():
+    owner = register_user("patient")
+    other = register_user("patient")
+    response = client.post(
+        "/api/chat/health-question",
+        headers={"X-Demo-Token": owner["demo_token"]},
+        json={"question": "When should I see a doctor?", "consent_to_process_health_data": True},
+    )
+    assert response.status_code == 200
+    message_id = response.json()["assistant_message_id"]
+
+    blocked = client.post(
+        "/api/chat/feedback",
+        headers={"X-Demo-Token": other["demo_token"]},
+        json={"message_id": message_id, "rating": "unsafe"},
+    )
+    assert blocked.status_code == 404
+
+    saved = client.post(
+        "/api/chat/feedback",
+        headers={"X-Demo-Token": owner["demo_token"]},
+        json={"message_id": message_id, "rating": "helpful"},
+    )
+    assert saved.status_code == 200
 
 
 def test_health_data_requires_consent():
@@ -498,6 +1123,7 @@ def test_register_login_report_download_and_doctor_review():
     )
     assert generated.status_code == 200
     report_id = generated.json()["report_id"]
+    assert generated.json()["report_version"] == 1
 
     pdf = client.get(f"/api/reports/{report_id}/download")
     assert pdf.status_code == 401
@@ -683,6 +1309,46 @@ def test_unverified_registration_can_be_retried_with_same_email():
     assert login.status_code == 403
 
 
+def test_login_lockout_password_reset_and_logout_revoke_session(monkeypatch):
+    monkeypatch.setenv("AUTH_MAX_FAILED_LOGINS", "3")
+    patient = register_user("patient")
+
+    for _ in range(3):
+        bad = client.post("/api/auth/login", json={"email": patient["email"], "password": "wrong-password"})
+        assert bad.status_code == 401
+
+    locked = client.post("/api/auth/login", json={"email": patient["email"], "password": "secret123"})
+    assert locked.status_code == 403
+    assert "locked" in locked.json()["detail"].lower()
+
+    reset_request = client.post("/api/auth/password-reset/request", json={"email": patient["email"]})
+    assert reset_request.status_code == 200
+    reset_outbox = client.get("/api/auth/dev/outbox", params={"email": patient["email"]})
+    assert reset_outbox.status_code == 200
+    reset_token = reset_outbox.json()["token"]
+    assert len(reset_token) >= 20
+
+    reset_confirm = client.post(
+        "/api/auth/password-reset/confirm",
+        json={"email": patient["email"], "token": reset_token, "new_password": "changed-secret-123"},
+    )
+    assert reset_confirm.status_code == 200
+
+    login = client.post("/api/auth/login", json={"email": patient["email"], "password": "changed-secret-123"})
+    assert login.status_code == 200
+    token = login.json()["demo_token"]
+    assert login.json()["session_expires_at"]
+
+    me = client.get("/api/auth/me", headers={"X-Demo-Token": token})
+    assert me.status_code == 200
+
+    logout = client.post("/api/auth/logout", headers={"X-Demo-Token": token})
+    assert logout.status_code == 200
+
+    revoked = client.get("/api/auth/me", headers={"X-Demo-Token": token})
+    assert revoked.status_code == 401
+
+
 def test_sso_start_scaffold_for_supported_providers():
     google = client.get("/api/auth/sso/google/start")
     assert google.status_code == 200
@@ -691,10 +1357,12 @@ def test_sso_start_scaffold_for_supported_providers():
     facebook = client.get("/api/auth/sso/facebook/start")
     assert facebook.status_code == 200
     assert facebook.json()["provider"] == "facebook"
+    assert facebook.json()["disabled"] is True
 
     instagram = client.get("/api/auth/sso/instagram/start")
     assert instagram.status_code == 200
     assert instagram.json()["provider"] == "instagram"
+    assert instagram.json()["disabled"] is True
 
     unsupported = client.get("/api/auth/sso/twitter/start")
     assert unsupported.status_code == 400
@@ -731,6 +1399,61 @@ def test_security_scan_blocks_malicious_upload_and_audit_masks_pii():
     assert export.headers["content-type"].startswith("text/csv")
 
 
+def test_compliance_controls_security_headers_consent_export_and_delete():
+    patient = register_user("patient")
+    compliance = register_user("compliance")
+
+    health = client.get("/api/health")
+    assert health.status_code == 200
+    assert health.headers["x-content-type-options"] == "nosniff"
+    assert health.headers["x-frame-options"] == "DENY"
+    assert "frame-ancestors 'none'" in health.headers["content-security-policy"]
+
+    blocked_status = client.get("/api/health/compliance", headers={"X-Demo-Token": patient["demo_token"]})
+    assert blocked_status.status_code == 403
+
+    compliance_status = client.get("/api/health/compliance", headers={"X-Demo-Token": compliance["demo_token"]})
+    assert compliance_status.status_code == 200
+    assert "privacy export" in compliance_status.json()["implemented_controls"]
+
+    generated = client.post(
+        "/api/reports/generate",
+        headers={"X-Demo-Token": patient["demo_token"]},
+        json={
+            "profile": profile(name="Privacy Patient"),
+            "symptoms": [{"name": "fatigue", "duration_days": 4, "severity": 4}],
+            "question": "I feel tired and sleep poorly.",
+            "consent_to_process_health_data": True,
+        },
+    )
+    assert generated.status_code == 200
+    report_id = generated.json()["report_id"]
+
+    with connect() as conn:
+        consent_count = conn.execute(
+            "SELECT COUNT(*) AS count FROM consent_records WHERE user_id = ? AND action = ?",
+            (patient["id"], "reports.generate"),
+        ).fetchone()["count"]
+    assert consent_count >= 1
+
+    exported = client.get("/api/privacy/export", headers={"X-Demo-Token": patient["demo_token"]})
+    assert exported.status_code == 200
+    assert exported.json()["reports"][0]["id"] == report_id
+    assert exported.json()["consent_records"]
+
+    deleted = client.post(
+        "/api/privacy/delete-health-data",
+        headers={"X-Demo-Token": patient["demo_token"]},
+        json={"confirmation": "DELETE"},
+    )
+    assert deleted.status_code == 200
+    assert deleted.json()["deleted"]["reports"] >= 1
+
+    reports_after_delete = client.get("/api/reports", headers={"X-Demo-Token": patient["demo_token"]})
+    assert reports_after_delete.status_code == 200
+    assert reports_after_delete.json()["items"] == []
+
+
 def test_doctor_assignment_lifecycle_signature_history_and_pdf_metadata():
     patient = register_user("patient")
     doctor = register_user("doctor")
@@ -746,6 +1469,10 @@ def test_doctor_assignment_lifecycle_signature_history_and_pdf_metadata():
     )
     assert generated.status_code == 200
     report_id = generated.json()["report_id"]
+
+    queue = client.get("/api/doctor/reports/queue", headers={"X-Demo-Token": doctor["demo_token"]}, params={"status": "pending"})
+    assert queue.status_code == 200
+    assert any(item["id"] == report_id for item in queue.json()["items"])
 
     with connect() as conn:
         raw = conn.execute("SELECT report_json FROM reports WHERE id = ?", (report_id,)).fetchone()["report_json"]
@@ -777,13 +1504,31 @@ def test_doctor_assignment_lifecycle_signature_history_and_pdf_metadata():
     assert body["doctor_review_status"] == "escalated"
     assert body["clinician_signature"] == "Dr Demo"
     assert body["review_priority"] == "urgent"
+    assert body["current_version"] == 2
     assert len(body["review_history"]) >= 2
+    assert len(body["version_history"]) >= 2
+
+    urgent_queue = client.get("/api/doctor/reports/queue", headers={"X-Demo-Token": doctor["demo_token"]}, params={"status": "urgent"})
+    assert urgent_queue.status_code == 200
+    assert any(item["id"] == report_id for item in urgent_queue.json()["items"])
+
+    notifications = client.get("/api/notifications", headers={"X-Demo-Token": patient["demo_token"]})
+    assert notifications.status_code == 200
+    assert any("review status" in item["message"].lower() for item in notifications.json()["items"])
 
     history = client.get(f"/api/doctor/reports/{report_id}/history", headers={"X-Demo-Token": doctor["demo_token"]})
     assert history.status_code == 200
     assert history.json()["items"][-1]["to_status"] == "escalated"
 
+    versions = client.get(f"/api/reports/{report_id}/versions", headers={"X-Demo-Token": patient["demo_token"]})
+    assert versions.status_code == 200
+    assert versions.json()["current_version"] == 2
+    assert [item["version_number"] for item in versions.json()["items"]] == [1, 2]
+
     pdf = client.get(f"/api/reports/{report_id}/download?demo_token={patient['demo_token']}")
     assert pdf.status_code == 200
     assert b"DOCTOR REVIEW METADATA" in pdf.content
+    assert b"METRIC CHARTS" in pdf.content
+    assert b"RAG REFERENCES" in pdf.content
+    assert b"REPORT VERSION HISTORY" in pdf.content
     assert b"Dr Demo" in pdf.content

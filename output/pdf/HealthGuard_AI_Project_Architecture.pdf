@@ -1,0 +1,329 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [5 0 R 7 0 R 9 0 R 11 0 R 13 0 R] /Count 5 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 842 595] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 6 0 R >>
+endobj
+6 0 obj
+<< /Length 3669 >>
+stream
+0.96 0.98 1 rg 0 0 842 595 re f
+0.04 0.22 0.44 rg 0 542 842 53 re f
+0.10 0.72 0.70 rg 0 538 842 4 re f
+1 1 1 rg BT /F2 22 Tf 36 562 Td (HealthGuard AI Project Architecture) Tj ET
+0.91 0.97 1 rg BT /F1 9 Tf 36 546 Td (Client-ready system architecture, data flow, security, RAG, LLM, and compliance overview) Tj ET
+0.08 0.12 0.22 rg BT /F1 11 Tf 42 500 Td (HealthGuard AI is a preventive health intelligence workspace. Patients complete guided assessments, upload) Tj ET
+0.08 0.12 0.22 rg BT /F1 11 Tf 42 485 Td (optional health documents, use voice intake, and generate educational reports. Doctors and dieticians review) Tj ET
+0.08 0.12 0.22 rg BT /F1 11 Tf 42 470 Td (patient reports with assignment, comments, signatures, status lifecycle, and patient notifications. Admin and) Tj ET
+0.08 0.12 0.22 rg BT /F1 11 Tf 42 455 Td (compliance users manage knowledge and audit visibility.) Tj ET
+0.91 0.97 1 rg 44 300 180 120 re f
+0.6 0.74 0.88 RG 44 300 180 120 re S
+0.03 0.2 0.42 rg BT /F2 10 Tf 52 402 Td (Implemented Stack) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 52 386 Td (FastAPI + Uvicorn) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 52 377 Td (HTML, CSS, JavaScript, Bootstrap) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 52 368 Td (PostgreSQL with SQLite fallback) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 52 359 Td (Gemini LLM, Hugging Face ASR) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 52 350 Td (RAG with pgvector-ready embeddings) Tj ET
+0.94 1 0.97 rg 252 300 180 120 re f
+0.6 0.74 0.88 RG 252 300 180 120 re S
+0.03 0.2 0.42 rg BT /F2 10 Tf 260 402 Td (Core Capabilities) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 260 386 Td (Verified auth and RBAC) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 260 377 Td (Assessment, risk, diet, activity) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 260 368 Td (Document extraction and RAG) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 260 359 Td (Doctor review workflow) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 260 350 Td (PDF reports and versioning) Tj ET
+1 0.96 0.91 rg 460 300 180 120 re f
+0.6 0.74 0.88 RG 460 300 180 120 re S
+0.03 0.2 0.42 rg BT /F2 10 Tf 468 402 Td (Compliance Controls) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 468 386 Td (Consent records) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 468 377 Td (Privacy export and deletion) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 468 368 Td (Encrypted PHI payloads) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 468 359 Td (Audit hash chain) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 468 350 Td (Security headers) Tj ET
+0.98 0.95 1 rg 668 300 120 120 re f
+0.6 0.74 0.88 RG 668 300 120 120 re S
+0.03 0.2 0.42 rg BT /F2 10 Tf 676 402 Td (Current Status) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 676 386 Td (Demo ready: about 85%) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 676 377 Td (Production: about 60%) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 676 368 Td (Healthcare compliance:) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 676 359 Td (about 60%) Tj ET
+0.08 0.12 0.22 rg BT /F2 14 Tf 42 250 Td (Architecture Goals) Tj ET
+0.08 0.12 0.22 rg BT /F1 9 Tf 52 228 Td (- Keep patient data isolated by authenticated user at API and storage layers.) Tj ET
+0.08 0.12 0.22 rg BT /F1 9 Tf 52 214 Td (- Use deterministic safety and risk scoring before LLM enhancement.) Tj ET
+0.08 0.12 0.22 rg BT /F1 9 Tf 52 200 Td (- Retrieve only relevant global and user-owned RAG chunks for reports and chat.) Tj ET
+0.08 0.12 0.22 rg BT /F1 9 Tf 52 186 Td (- Fail closed when live LLM report generation is configured but unavailable.) Tj ET
+0.08 0.12 0.22 rg BT /F1 9 Tf 52 172 Td (- Maintain audit, consent, report versioning, and privacy controls for pilot compliance readiness.) Tj ET
+0.63 0.72 0.82 RG 36 30 770 1 re S
+0.34 0.39 0.46 rg BT /F1 8 Tf 36 16 Td (HealthGuard AI architecture - page 1 of 5) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 842 595] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 8 0 R >>
+endobj
+8 0 obj
+<< /Length 4031 >>
+stream
+0.96 0.98 1 rg 0 0 842 595 re f
+0.04 0.22 0.44 rg 0 542 842 53 re f
+0.10 0.72 0.70 rg 0 538 842 4 re f
+1 1 1 rg BT /F2 22 Tf 36 562 Td (End-to-End Architecture Diagram) Tj ET
+0.91 0.97 1 rg BT /F1 9 Tf 36 546 Td (Major deployable layers and information flow) Tj ET
+0.91 0.97 1 rg 34 400 135 92 re f
+0.6 0.74 0.88 RG 34 400 135 92 re S
+0.03 0.2 0.42 rg BT /F2 10 Tf 42 474 Td (Clients) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 42 458 Td (Patient browser/mobile) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 42 449 Td (Doctor dashboard) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 42 440 Td (Admin/compliance) Tj ET
+0.94 1 0.97 rg 204 400 135 92 re f
+0.6 0.74 0.88 RG 204 400 135 92 re S
+0.03 0.2 0.42 rg BT /F2 10 Tf 212 474 Td (FastAPI Gateway) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 212 458 Td (Static UI) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 212 449 Td (API router) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 212 440 Td (Security headers) Tj ET
+1 0.96 0.91 rg 374 380 170 125 re f
+0.6 0.74 0.88 RG 374 380 170 125 re S
+0.03 0.2 0.42 rg BT /F2 10 Tf 382 487 Td (Core Services) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 382 471 Td (Auth/RBAC) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 382 462 Td (Assessment/risk) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 382 453 Td (Document/RAG) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 382 444 Td (Report/doctor) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 382 435 Td (Compliance/privacy) Tj ET
+0.98 0.95 1 rg 594 400 190 92 re f
+0.6 0.74 0.88 RG 594 400 190 92 re S
+0.03 0.2 0.42 rg BT /F2 10 Tf 602 474 Td (Data Stores) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 602 458 Td (PostgreSQL) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 602 449 Td (SQLite fallback) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 602 440 Td (RAG/pgvector) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 602 431 Td (Audit/consent) Tj ET
+0.95 0.98 0.92 rg 594 245 190 92 re f
+0.6 0.74 0.88 RG 594 245 190 92 re S
+0.03 0.2 0.42 rg BT /F2 10 Tf 602 319 Td (External APIs) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 602 303 Td (Gemini LLM) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 602 294 Td (Hugging Face ASR) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 602 285 Td (SMTP) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 602 276 Td (Google OAuth) Tj ET
+0.93 0.96 1 rg 374 220 170 92 re f
+0.6 0.74 0.88 RG 374 220 170 92 re S
+0.03 0.2 0.42 rg BT /F2 10 Tf 382 294 Td (Outputs) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 382 278 Td (Saved report) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 382 269 Td (Branded PDF) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 382 260 Td (Doctor notifications) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 382 251 Td (Privacy export) Tj ET
+0.10 0.38 0.65 RG 1.2 w 169 446 m 204 446 l S
+0.08 0.2 0.34 rg BT /F1 7 Tf 162.5 450.0 Td (HTTPS) Tj ET
+0.10 0.38 0.65 RG 1.2 w 339 446 m 374 446 l S
+0.08 0.2 0.34 rg BT /F1 7 Tf 332.5 450.0 Td (routes) Tj ET
+0.10 0.38 0.65 RG 1.2 w 544 446 m 594 446 l S
+0.08 0.2 0.34 rg BT /F1 7 Tf 545.0 450.0 Td (read/write) Tj ET
+0.10 0.38 0.65 RG 1.2 w 544 410 m 594 292 l S
+0.08 0.2 0.34 rg BT /F1 7 Tf 545.0 355.0 Td (API calls) Tj ET
+0.10 0.38 0.65 RG 1.2 w 459 380 m 459 312 l S
+0.08 0.2 0.34 rg BT /F1 7 Tf 435.0 350.0 Td (produces) Tj ET
+0.10 0.38 0.65 RG 1.2 w 544 266 m 594 292 l S
+0.08 0.2 0.34 rg BT /F1 7 Tf 545.0 283.0 Td (integrates) Tj ET
+0.08 0.12 0.22 rg BT /F2 14 Tf 42 162 Td (Key Flow) Tj ET
+0.08 0.12 0.22 rg BT /F1 9 Tf 52 140 Td (- User request enters the FastAPI router after authentication and email verification.) Tj ET
+0.08 0.12 0.22 rg BT /F1 9 Tf 52 126 Td (- Assessment service validates mandatory patient fields and consent.) Tj ET
+0.08 0.12 0.22 rg BT /F1 9 Tf 52 112 Td (- Document service scans uploads, extracts text, chunks content, stores embeddings, and indexes per user.) Tj ET
+0.08 0.12 0.22 rg BT /F1 9 Tf 52 98 Td (- Report service combines deterministic risk output, RAG citations, and Gemini LLM enhancement.) Tj ET
+0.08 0.12 0.22 rg BT /F1 9 Tf 52 84 Td (- Doctor workflow updates report lifecycle and version history; patient receives notifications.) Tj ET
+0.63 0.72 0.82 RG 36 30 770 1 re S
+0.34 0.39 0.46 rg BT /F1 8 Tf 36 16 Td (HealthGuard AI architecture - page 2 of 5) Tj ET
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 842 595] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 10 0 R >>
+endobj
+10 0 obj
+<< /Length 3546 >>
+stream
+0.96 0.98 1 rg 0 0 842 595 re f
+0.04 0.22 0.44 rg 0 542 842 53 re f
+0.10 0.72 0.70 rg 0 538 842 4 re f
+1 1 1 rg BT /F2 22 Tf 36 562 Td (RAG and LLM Orchestration) Tj ET
+0.91 0.97 1 rg BT /F1 9 Tf 36 546 Td (How uploaded files and knowledge are used safely) Tj ET
+0.91 0.97 1 rg 44 392 145 82 re f
+0.6 0.74 0.88 RG 44 392 145 82 re S
+0.03 0.2 0.42 rg BT /F2 10 Tf 52 456 Td (1. Upload) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 52 440 Td (TXT, PDF, DOCX) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 52 431 Td (Security scan) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 52 422 Td (Size/type checks) Tj ET
+0.94 1 0.97 rg 218 392 145 82 re f
+0.6 0.74 0.88 RG 218 392 145 82 re S
+0.03 0.2 0.42 rg BT /F2 10 Tf 226 456 Td (2. Extract) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 226 440 Td (Text extraction) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 226 431 Td (Health-topic detection) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 226 422 Td (Safe suggestions) Tj ET
+1 0.96 0.91 rg 392 392 145 82 re f
+0.6 0.74 0.88 RG 392 392 145 82 re S
+0.03 0.2 0.42 rg BT /F2 10 Tf 400 456 Td (3. Chunk) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 400 440 Td (Sentence-aware chunks) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 400 431 Td (Overlap) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 400 422 Td (Citation labels) Tj ET
+0.98 0.95 1 rg 566 392 145 82 re f
+0.6 0.74 0.88 RG 566 392 145 82 re S
+0.03 0.2 0.42 rg BT /F2 10 Tf 574 456 Td (4. Embed) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 574 440 Td (Stored embeddings) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 574 431 Td (JSON fallback) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 574 422 Td (pgvector optional) Tj ET
+0.10 0.38 0.65 RG 1.2 w 189 433 m 218 433 l S
+0.10 0.38 0.65 RG 1.2 w 363 433 m 392 433 l S
+0.10 0.38 0.65 RG 1.2 w 537 433 m 566 433 l S
+0.95 0.98 0.92 rg 110 240 170 92 re f
+0.6 0.74 0.88 RG 110 240 170 92 re S
+0.03 0.2 0.42 rg BT /F2 10 Tf 118 314 Td (5. Retrieve) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 118 298 Td (Only global knowledge) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 118 289 Td (Plus logged-in user's chunks) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 118 280 Td (Cosine similarity ranking) Tj ET
+0.93 0.96 1 rg 335 240 170 92 re f
+0.6 0.74 0.88 RG 335 240 170 92 re S
+0.03 0.2 0.42 rg BT /F2 10 Tf 343 314 Td (6. Prompt) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 343 298 Td (Patient input) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 343 289 Td (Risk summary) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 343 280 Td (Top citations) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 343 271 Td (Safety requirements) Tj ET
+1 0.94 0.95 rg 560 240 170 92 re f
+0.6 0.74 0.88 RG 560 240 170 92 re S
+0.03 0.2 0.42 rg BT /F2 10 Tf 568 314 Td (7. Generate) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 568 298 Td (Gemini JSON output) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 568 289 Td (No diagnosis) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 568 280 Td (No prescription) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 568 271 Td (Fail closed for reports) Tj ET
+0.10 0.38 0.65 RG 1.2 w 280 286 m 335 286 l S
+0.10 0.38 0.65 RG 1.2 w 505 286 m 560 286 l S
+0.08 0.12 0.22 rg BT /F2 14 Tf 44 170 Td (RAG Privacy Rule) Tj ET
+0.08 0.12 0.22 rg BT /F1 10 Tf 44 148 Td (Patient uploads are tied to rag_documents.user_id and rag_chunks.user_id. Report and chat retrieval loads global approved) Tj ET
+0.08 0.12 0.22 rg BT /F1 10 Tf 44 134 Td (knowledge plus only the logged-in patient's document chunks. Other patients' uploaded files are never selected for that) Tj ET
+0.08 0.12 0.22 rg BT /F1 10 Tf 44 120 Td (user's report context.) Tj ET
+0.63 0.72 0.82 RG 36 30 770 1 re S
+0.34 0.39 0.46 rg BT /F1 8 Tf 36 16 Td (HealthGuard AI architecture - page 3 of 5) Tj ET
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 842 595] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 12 0 R >>
+endobj
+12 0 obj
+<< /Length 2954 >>
+stream
+0.96 0.98 1 rg 0 0 842 595 re f
+0.04 0.22 0.44 rg 0 542 842 53 re f
+0.10 0.72 0.70 rg 0 538 842 4 re f
+1 1 1 rg BT /F2 22 Tf 36 562 Td (Security, Privacy, and Compliance Architecture) Tj ET
+0.91 0.97 1 rg BT /F1 9 Tf 36 546 Td (Controls that lift pilot-readiness toward healthcare compliance) Tj ET
+0.91 0.97 1 rg 44 390 168 105 re f
+0.6 0.74 0.88 RG 44 390 168 105 re S
+0.03 0.2 0.42 rg BT /F2 10 Tf 52 477 Td (Access Control) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 52 461 Td (Email verification gate) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 52 452 Td (Signed expiring sessions) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 52 443 Td (Logout revocation) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 52 434 Td (Role-based APIs) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 52 425 Td (Google SSO path) Tj ET
+0.94 1 0.97 rg 238 390 168 105 re f
+0.6 0.74 0.88 RG 238 390 168 105 re S
+0.03 0.2 0.42 rg BT /F2 10 Tf 246 477 Td (Data Protection) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 246 461 Td (Encrypted PHI payloads) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 246 452 Td (Patient-only reports) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 246 443 Td (Per-user RAG) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 246 434 Td (Privacy export) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 246 425 Td (Health-data deletion) Tj ET
+1 0.96 0.91 rg 432 390 168 105 re f
+0.6 0.74 0.88 RG 432 390 168 105 re S
+0.03 0.2 0.42 rg BT /F2 10 Tf 440 477 Td (Auditability) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 440 461 Td (Audit hash chain) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 440 452 Td (IP/user-agent metadata) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 440 443 Td (Consent records) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 440 434 Td (Report versions) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 440 425 Td (Doctor review history) Tj ET
+0.98 0.95 1 rg 626 390 168 105 re f
+0.6 0.74 0.88 RG 626 390 168 105 re S
+0.03 0.2 0.42 rg BT /F2 10 Tf 634 477 Td (App Hardening) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 634 461 Td (Security headers) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 634 452 Td (Upload scan) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 634 443 Td (Rate limits) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 634 434 Td (LLM fail-closed) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 634 425 Td (No prescribing) Tj ET
+0.08 0.12 0.22 rg BT /F2 14 Tf 44 320 Td (Compliance Status) Tj ET
+0.08 0.12 0.22 rg BT /F1 9 Tf 54 296 Td (- Current healthcare compliance readiness is approximately 60% for a pilot or controlled demo.) Tj ET
+0.08 0.12 0.22 rg BT /F1 9 Tf 54 282 Td (- The system includes consent, audit, privacy export/delete, PHI encryption, and access isolation controls.) Tj ET
+0.08 0.12 0.22 rg BT /F1 9 Tf 54 268 Td (- It is not yet production HIPAA-ready without BAA, KMS-managed keys, SIEM, penetration testing, formal risk assessment,) Tj ET
+0.08 0.12 0.22 rg BT /F1 9 Tf 64 256 Td (malware scanning, backup evidence, and incident response procedures.) Tj ET
+0.63 0.72 0.82 RG 36 30 770 1 re S
+0.34 0.39 0.46 rg BT /F1 8 Tf 36 16 Td (HealthGuard AI architecture - page 4 of 5) Tj ET
+endstream
+endobj
+13 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 842 595] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 14 0 R >>
+endobj
+14 0 obj
+<< /Length 2674 >>
+stream
+0.96 0.98 1 rg 0 0 842 595 re f
+0.04 0.22 0.44 rg 0 542 842 53 re f
+0.10 0.72 0.70 rg 0 538 842 4 re f
+1 1 1 rg BT /F2 22 Tf 36 562 Td (Pending Production Architecture Items) Tj ET
+0.91 0.97 1 rg BT /F1 9 Tf 36 546 Td (What remains before production healthcare deployment) Tj ET
+0.08 0.12 0.22 rg BT /F2 15 Tf 44 500 Td (Highest Priority Pending Items) Tj ET
+0.08 0.12 0.22 rg BT /F1 9 Tf 54 474 Td (- Deploy over HTTPS with managed PostgreSQL, private database networking, secure cookies, and platform-level rate limiting.) Tj ET
+0.08 0.12 0.22 rg BT /F1 9 Tf 54 460 Td (- Move secrets and encryption keys to AWS Secrets Manager, GCP Secret Manager, or Vault with KMS-backed rotation.) Tj ET
+0.08 0.12 0.22 rg BT /F1 9 Tf 54 446 Td (- Use production pgvector and a stronger embedding model, with prompt/version audit trails and PHI minimization.) Tj ET
+0.08 0.12 0.22 rg BT /F1 9 Tf 54 432 Td (- Integrate real malware scanning, OCR for scanned files, lab table extraction, and confidence scoring.) Tj ET
+0.08 0.12 0.22 rg BT /F1 9 Tf 54 418 Td (- Add SIEM/monitoring, immutable audit storage, backup/restore evidence, disaster recovery, and incident response.) Tj ET
+0.08 0.12 0.22 rg BT /F1 9 Tf 54 404 Td (- Complete legal/compliance work: BAA, HIPAA risk assessment, policy docs, and penetration testing.) Tj ET
+0.08 0.12 0.22 rg BT /F2 15 Tf 44 260 Td (Recommended Deployment Path) Tj ET
+0.91 0.97 1 rg 54 145 180 78 re f
+0.6 0.74 0.88 RG 54 145 180 78 re S
+0.03 0.2 0.42 rg BT /F2 10 Tf 62 205 Td (Demo) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 62 189 Td (Render or ngrok) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 62 180 Td (HTTPS URL) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 62 171 Td (Managed PostgreSQL optional) Tj ET
+0.94 1 0.97 rg 270 145 180 78 re f
+0.6 0.74 0.88 RG 270 145 180 78 re S
+0.03 0.2 0.42 rg BT /F2 10 Tf 278 205 Td (Pilot) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 278 189 Td (Google Cloud Run) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 278 180 Td (Cloud SQL) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 278 171 Td (Secret Manager) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 278 162 Td (Cloud Logging) Tj ET
+1 0.96 0.91 rg 486 145 220 78 re f
+0.6 0.74 0.88 RG 486 145 220 78 re S
+0.03 0.2 0.42 rg BT /F2 10 Tf 494 205 Td (Production Healthcare) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 494 189 Td (AWS or GCP with BAA) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 494 180 Td (KMS, WAF, SIEM) Tj ET
+0.16 0.22 0.32 rg BT /F1 7 Tf 494 171 Td (Private network and compliance evidence) Tj ET
+0.10 0.38 0.65 RG 1.2 w 234 184 m 270 184 l S
+0.10 0.38 0.65 RG 1.2 w 450 184 m 486 184 l S
+0.63 0.72 0.82 RG 36 30 770 1 re S
+0.34 0.39 0.46 rg BT /F1 8 Tf 36 16 Td (HealthGuard AI architecture - page 5 of 5) Tj ET
+endstream
+endobj
+xref
+0 15
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000141 00000 n 
+0000000211 00000 n 
+0000000286 00000 n 
+0000000422 00000 n 
+0000004143 00000 n 
+0000004279 00000 n 
+0000008362 00000 n 
+0000008499 00000 n 
+0000012098 00000 n 
+0000012236 00000 n 
+0000015243 00000 n 
+0000015381 00000 n 
+trailer
+<< /Size 15 /Root 1 0 R >>
+startxref
+18108
+%%EOF

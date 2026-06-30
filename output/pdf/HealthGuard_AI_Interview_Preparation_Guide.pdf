@@ -1,0 +1,760 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [6 0 R 8 0 R 10 0 R 12 0 R 14 0 R 16 0 R 18 0 R 20 0 R 22 0 R 24 0 R 26 0 R] /Count 11 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+6 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 7 0 R >>
+endobj
+7 0 obj
+<< /Length 1746 >>
+stream
+0.06 0.17 0.36 rg 0.06 0.17 0.36 RG 0.00 803.89 595.28 38.00 re f
+BT 1 1 1 rg /F2 9 Tf 48.00 817.89 Td (HealthGuard AI - Senior Software Engineer / GenAI Interview Guide) Tj ET
+BT 0.25 0.29 0.36 rg /F1 8 Tf 48.00 28.00 Td (Healthcare GenAI | RAG | Voice Assistant | Patient Safety Chatbot) Tj ET
+BT 0.25 0.29 0.36 rg /F1 8 Tf 502.28 28.00 Td (Page 1) Tj ET
+BT 0.06 0.17 0.36 rg /F2 28 Tf 165.00 687.89 Td (HealthGuard AI) Tj ET
+BT 0.25 0.29 0.36 rg /F1 12 Tf 82.00 659.89 Td (Complete Senior Software Engineer / GenAI Developer Interview Preparation Guide) Tj ET
+BT 1 1 1 rg /F3 7.5 Tf 48.00 609.89 Td (Item               | Details                                                                 ) Tj ET
+0.06 0.17 0.36 rg 0.06 0.17 0.36 RG 44.00 606.89 507.28 13.00 re f
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 593.89 Td (Project Type       | Healthcare GenAI / RAG / Voice Assistant / Patient Safety Chatbot       ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 582.89 Td (Goal               | Safe, short, user-friendly guidance without diagnosis, prescriptions, or) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 571.89 Td (Capabilities       | Assessment, chatbot, voice input, document upload, RAG, reports, doctor ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 560.89 Td (Interview Focus    | Architecture, safety, RAG, memory isolation, NLP, voice, testing, deploy) Tj ET
+BT 0.07 0.09 0.13 rg /F1 10 Tf 48.00 541.89 Td (This PDF is written for practical interview preparation. It explains the implemented project,) Tj ET
+BT 0.07 0.09 0.13 rg /F1 10 Tf 48.00 528.89 Td (design decisions, backend and frontend flows, GenAI architecture, production readiness, and cross-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 10 Tf 48.00 515.89 Td (question answers.) Tj ET
+endstream
+endobj
+8 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 9 0 R >>
+endobj
+9 0 obj
+<< /Length 7293 >>
+stream
+0.06 0.17 0.36 rg 0.06 0.17 0.36 RG 0.00 803.89 595.28 38.00 re f
+BT 1 1 1 rg /F2 9 Tf 48.00 817.89 Td (HealthGuard AI - Senior Software Engineer / GenAI Interview Guide) Tj ET
+BT 0.25 0.29 0.36 rg /F1 8 Tf 48.00 28.00 Td (Healthcare GenAI | RAG | Voice Assistant | Patient Safety Chatbot) Tj ET
+BT 0.25 0.29 0.36 rg /F1 8 Tf 502.28 28.00 Td (Page 2) Tj ET
+BT 0.06 0.17 0.36 rg /F2 16 Tf 48.00 773.89 Td (1. Project Overview) Tj ET
+0.82 0.85 0.88 RG 0.6 w 48.00 765.89 m 547.28 765.89 l S
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 751.89 Td (HealthGuard AI is a healthcare assistant workspace for patients, doctors, admins, and compliance users.) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 739.39 Td (It allows patients to enter health details, ask health questions, use voice input, upload medical) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 726.89 Td (documents, generate educational reports, and prepare for doctor review.) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 709.39 Td (The business problem is fragmented patient information and unclear symptom communication. The application) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 696.89 Td (organizes inputs and provides safe, short guidance while avoiding diagnosis, prescription, and dosage) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 684.39 Td (advice.) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 666.89 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 666.89 Td (Patient: assessment, chatbot, voice, upload, reports.) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 654.69 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 654.69 Td (Doctor/Dietician: review reports and add notes.) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 642.49 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 642.49 Td (Admin: manage trusted knowledge and citations.) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 630.29 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 630.29 Td (Compliance: audit and privacy controls.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 16 Tf 48.00 611.09 Td (2. Complete Tech Stack) Tj ET
+0.82 0.85 0.88 RG 0.6 w 48.00 603.09 m 547.28 603.09 l S
+BT 1 1 1 rg /F3 7.5 Tf 48.00 589.09 Td (Layer          | Technology                  | Why                                           ) Tj ET
+0.06 0.17 0.36 rg 0.06 0.17 0.36 RG 44.00 586.09 507.28 13.00 re f
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 573.09 Td (Frontend       | HTML/CSS/JavaScript, React- | Responsive dashboard, chatbot, voice UI, mobil) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 562.09 Td (Backend        | Python FastAPI              | Typed APIs, service layer, async-ready        ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 551.09 Td (LLM            | Gemini/OpenAI-ready abstrac | Provider swap, JSON contract, fail-closed     ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 540.09 Td (RAG            | Extraction, chunks, embeddi | Grounded answers from documents               ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 529.09 Td (Database       | SQLite fallback / PostgreSQ | Demo plus production persistence              ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 518.09 Td (Vector DB      | Local vectors / pgvector /  | Semantic search with user metadata            ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 507.09 Td (Auth           | Email OTP, sessions, SSO pa | Verified users and RBAC                       ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 496.09 Td (Email          | SMTP no-reply               | Verification and password reset               ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 485.09 Td (PDF            | Built-in generator / Report | Reports and interview docs                    ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 474.09 Td (Voice          | Web Speech API / ASR fallba | Natural voice questions                       ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 463.09 Td (Monitoring     | Health endpoints, audit log | Operational readiness                         ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 452.09 Td (CI/CD          | GitHub Actions/Jenkins-read | Tests, build, deploy, rollback                ) Tj ET
+BT 0.06 0.17 0.36 rg /F2 16 Tf 48.00 429.09 Td (3. Complete Project Structure) Tj ET
+0.82 0.85 0.88 RG 0.6 w 48.00 421.09 m 547.28 421.09 l S
+0.95 0.97 0.99 rg 0.95 0.97 0.99 RG 44.00 269.09 507.28 142.00 re f
+BT 0.05 0.07 0.10 rg /F3 7.6 Tf 48.00 397.09 Td (healthguard-ai/) Tj ET
+BT 0.05 0.07 0.10 rg /F3 7.6 Tf 48.00 387.09 Td (  backend/app/api/           FastAPI routes) Tj ET
+BT 0.05 0.07 0.10 rg /F3 7.6 Tf 48.00 377.09 Td (  backend/app/schemas/       Pydantic contracts) Tj ET
+BT 0.05 0.07 0.10 rg /F3 7.6 Tf 48.00 367.09 Td (  backend/app/services/      Auth, chat, NLP, RAG, LLM, report, PDF, speech, storage) Tj ET
+BT 0.05 0.07 0.10 rg /F3 7.6 Tf 48.00 357.09 Td (  backend/app/db/            SQLite/PostgreSQL schema and connections) Tj ET
+BT 0.05 0.07 0.10 rg /F3 7.6 Tf 48.00 347.09 Td (  backend/tests/             Safety, auth, RAG, memory, upload, report tests) Tj ET
+BT 0.05 0.07 0.10 rg /F3 7.6 Tf 48.00 337.09 Td (  frontend/index.html        Dashboard, chatbot, voice, forms, reports) Tj ET
+BT 0.05 0.07 0.10 rg /F3 7.6 Tf 48.00 327.09 Td (  frontend/app.js            API calls, memory keys, voice capture, UI behavior) Tj ET
+BT 0.05 0.07 0.10 rg /F3 7.6 Tf 48.00 317.09 Td (  frontend/styles.css        Responsive healthcare UI and chatbot drawer) Tj ET
+BT 0.05 0.07 0.10 rg /F3 7.6 Tf 48.00 307.09 Td (  docs/                      Documentation) Tj ET
+BT 0.05 0.07 0.10 rg /F3 7.6 Tf 48.00 297.09 Td (  scripts/                   Utility and PDF generation scripts) Tj ET
+BT 0.05 0.07 0.10 rg /F3 7.6 Tf 48.00 287.09 Td (  output/pdf/                Generated artifacts) Tj ET
+BT 0.05 0.07 0.10 rg /F3 7.6 Tf 48.00 277.09 Td (  infra/                     Docker/deployment-ready assets) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 265.09 Td (The architecture is layered so routes stay thin, schemas validate data, services own business logic, and) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 252.59 Td (storage/RAG/LLM integrations are isolated and testable.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 16 Tf 48.00 231.09 Td (4. System Architecture) Tj ET
+0.82 0.85 0.88 RG 0.6 w 48.00 223.09 m 547.28 223.09 l S
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 209.09 Td (The browser talks to FastAPI. FastAPI enforces auth/RBAC, routes work to services, stores data in the) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 196.59 Td (database, retrieves RAG context, calls the LLM abstraction when needed, and generates PDFs or audit logs.) Tj ET
+0.95 0.97 0.99 rg 0.95 0.97 0.99 RG 44.00 121.09 507.28 62.00 re f
+BT 0.05 0.07 0.10 rg /F3 7.6 Tf 48.00 169.09 Td (Browser UI -> FastAPI Routes -> Auth/RBAC -> Services) Tj ET
+BT 0.05 0.07 0.10 rg /F3 7.6 Tf 48.00 159.09 Td (  -> Chat + NLP + Safety -> RAG Retrieval -> LLM/Rules -> Chat Memory) Tj ET
+BT 0.05 0.07 0.10 rg /F3 7.6 Tf 48.00 149.09 Td (  -> Assessment -> Report Engine -> PDF) Tj ET
+BT 0.05 0.07 0.10 rg /F3 7.6 Tf 48.00 139.09 Td (  -> Upload -> Extract -> Chunk -> Embed -> Vector Store) Tj ET
+BT 0.05 0.07 0.10 rg /F3 7.6 Tf 48.00 129.09 Td (  -> SMTP -> Audit Logs -> Health Checks) Tj ET
+BT 0.06 0.17 0.36 rg /F2 16 Tf 48.00 113.09 Td (5. Backend Architecture) Tj ET
+0.82 0.85 0.88 RG 0.6 w 48.00 105.09 m 547.28 105.09 l S
+endstream
+endobj
+10 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 11 0 R >>
+endobj
+11 0 obj
+<< /Length 7007 >>
+stream
+0.06 0.17 0.36 rg 0.06 0.17 0.36 RG 0.00 803.89 595.28 38.00 re f
+BT 1 1 1 rg /F2 9 Tf 48.00 817.89 Td (HealthGuard AI - Senior Software Engineer / GenAI Interview Guide) Tj ET
+BT 0.25 0.29 0.36 rg /F1 8 Tf 48.00 28.00 Td (Healthcare GenAI | RAG | Voice Assistant | Patient Safety Chatbot) Tj ET
+BT 0.25 0.29 0.36 rg /F1 8 Tf 502.28 28.00 Td (Page 3) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 777.89 Td (Routes handle HTTP, consent, auth, and orchestration. Services implement domain logic. Storage owns) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 765.39 Td (database queries. RAG and LLM layers isolate external systems. This separation improves testing and) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 752.89 Td (production maintainability.) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 735.39 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 735.39 Td (API routes) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 723.19 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 723.19 Td (Pydantic schemas) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 710.99 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 710.99 Td (Services layer) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 698.79 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 698.79 Td (Database/repository layer) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 686.59 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 686.59 Td (RAG layer) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 674.39 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 674.39 Td (LLM provider layer) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 662.19 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 662.19 Td (Security and monitoring layers) Tj ET
+BT 0.06 0.17 0.36 rg /F2 16 Tf 48.00 642.99 Td (6. Frontend Architecture) Tj ET
+0.82 0.85 0.88 RG 0.6 w 48.00 634.99 m 547.28 634.99 l S
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 620.99 Td (The frontend includes login/register, email verification, dashboard, chatbot, voice assistant, assessment) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 608.49 Td (form, document upload, reports, doctor review, admin knowledge upload, and mobile responsive navigation.) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 590.99 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 590.99 Td (Textbox clears after Send) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 578.79 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 578.79 Td (Loading states) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 566.59 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 566.59 Td (Mobile hamburger menu) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 554.39 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 554.39 Td (Floating chatbot) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 542.19 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 542.19 Td (Voice states: Listening, Processing, Responding) Tj ET
+BT 0.06 0.17 0.36 rg /F2 16 Tf 48.00 522.99 Td (7. Authentication and Authorization Flow) Tj ET
+0.82 0.85 0.88 RG 0.6 w 48.00 514.99 m 547.28 514.99 l S
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 500.99 Td (Users register, verify email OTP, log in, and access role-specific dashboards. Backend route protection) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 488.49 Td (is mandatory because frontend hiding is only UX.) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 470.99 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 470.99 Td (Patient, doctor, admin, compliance roles) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 458.79 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 458.79 Td (Session/JWT-ready handling) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 446.59 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 446.59 Td (Google SSO path) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 434.39 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 434.39 Td (User data isolation) Tj ET
+BT 0.06 0.17 0.36 rg /F2 16 Tf 48.00 415.19 Td (8. Chatbot Functionality) Tj ET
+0.82 0.85 0.88 RG 0.6 w 48.00 407.19 m 547.28 407.19 l S
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 393.19 Td (The chatbot gives short 1-3 line answers, avoids repeated disclaimers, shows urgent safety only for red) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 380.69 Td (flags, stores user-specific memory, and scopes history by user_id and conversation_id.) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 363.19 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 363.19 Td (Stores user message immediately) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 350.99 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 350.99 Td (Fetches latest 5-10 messages) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 338.79 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 338.79 Td (Uses active conversation only) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 326.59 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 326.59 Td (Does not mix users or old conversations) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 314.39 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 314.39 Td (Current message is always included) Tj ET
+0.95 0.97 0.99 rg 0.95 0.97 0.99 RG 44.00 231.19 507.28 72.00 re f
+BT 0.05 0.07 0.10 rg /F3 7.6 Tf 48.00 289.19 Td (Memory flow:) Tj ET
+BT 0.05 0.07 0.10 rg /F3 7.6 Tf 48.00 279.19 Td (1. Save current user message) Tj ET
+BT 0.05 0.07 0.10 rg /F3 7.6 Tf 48.00 269.19 Td (2. Fetch latest messages for user_id + conversation_id ORDER BY id DESC LIMIT 10) Tj ET
+BT 0.05 0.07 0.10 rg /F3 7.6 Tf 48.00 259.19 Td (3. Reverse rows into chronological order) Tj ET
+BT 0.05 0.07 0.10 rg /F3 7.6 Tf 48.00 249.19 Td (4. Build prompt with recent memory + current question + RAG context) Tj ET
+BT 0.05 0.07 0.10 rg /F3 7.6 Tf 48.00 239.19 Td (5. Save assistant response) Tj ET
+BT 0.06 0.17 0.36 rg /F2 16 Tf 48.00 223.19 Td (9. Voice Assistant Functionality) Tj ET
+0.82 0.85 0.88 RG 0.6 w 48.00 215.19 m 547.28 215.19 l S
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 201.19 Td (Voice input is lightweight chatbot mode. It uses continuous listening, interim transcripts, a manual Stop) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 188.69 Td (button, and 5-second silence detection. It sends only the final transcript to the chat API.) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 171.19 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 171.19 Td (Does not generate full reports) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 158.99 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 158.99 Td (Asks 3-4 human-style follow-ups) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 146.79 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 146.79 Td (Summarizes responses) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 134.59 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 134.59 Td (Gives precautions, diet, hydration, rest, and doctor-visit preparation) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 122.39 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 122.39 Td (Escalates red flags calmly) Tj ET
+BT 0.06 0.17 0.36 rg /F2 16 Tf 48.00 103.19 Td (10. NLP Layer / Intent Understanding) Tj ET
+0.82 0.85 0.88 RG 0.6 w 48.00 95.19 m 547.28 95.19 l S
+endstream
+endobj
+12 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 13 0 R >>
+endobj
+13 0 obj
+<< /Length 6870 >>
+stream
+0.06 0.17 0.36 rg 0.06 0.17 0.36 RG 0.00 803.89 595.28 38.00 re f
+BT 1 1 1 rg /F2 9 Tf 48.00 817.89 Td (HealthGuard AI - Senior Software Engineer / GenAI Interview Guide) Tj ET
+BT 0.25 0.29 0.36 rg /F1 8 Tf 48.00 28.00 Td (Healthcare GenAI | RAG | Voice Assistant | Patient Safety Chatbot) Tj ET
+BT 0.25 0.29 0.36 rg /F1 8 Tf 502.28 28.00 Td (Page 4) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 777.89 Td (The NLP layer runs before final response generation. It detects intent, symptoms, duration, severity,) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 765.39 Td (age, location, medicines, allergies, conditions, red flags, missing fields, and next action.) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 747.89 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 747.89 Td (Intent examples: symptom_guidance, medicine_question, lab_report_question, diet_question,) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 735.69 Td (emergency_symptom, general_health_question, better_suggestion_info_request) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 723.49 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 723.49 Td (Example answer: I need symptom, duration, severity, age, existing conditions, current medicines,) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 711.29 Td (allergies, recent reports, and red flags.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 16 Tf 48.00 692.09 Td (11. RAG Pipeline) Tj ET
+0.82 0.85 0.88 RG 0.6 w 48.00 684.09 m 547.28 684.09 l S
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 670.09 Td (File upload goes through validation, extraction, cleaning, chunking, embedding, vector storage, metadata) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 657.59 Td (storage, retrieval, reranking, prompt building, LLM/rules answer generation, citations, and user-specific) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 645.09 Td (isolation.) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 627.59 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 627.59 Td (Chunk size controls context granularity) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 615.39 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 615.39 Td (Overlap preserves boundary context) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 603.19 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 603.19 Td (top_k controls retrieval cost) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 590.99 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 590.99 Td (Similarity threshold reduces irrelevant context) Tj ET
+BT 0.06 0.17 0.36 rg /F2 16 Tf 48.00 571.79 Td (12. RAG Data Sources) Tj ET
+0.82 0.85 0.88 RG 0.6 w 48.00 563.79 m 547.28 563.79 l S
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 549.79 Td (Uploadable sources include lab reports, discharge summaries, prescriptions, health reports, allergy) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 537.29 Td (records, diagnosis history, diet plans, BP/sugar logs, synthetic patient files, and legal public demo) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 524.79 Td (datasets such as Synthea/MIMIC demo.) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 507.29 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 507.29 Td (Markdown is good for clean text hierarchy) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 495.09 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 495.09 Td (JSON is good for structured lab/vitals data) Tj ET
+BT 0.06 0.17 0.36 rg /F2 16 Tf 48.00 475.89 Td (13. Report Generation Flow) Tj ET
+0.82 0.85 0.88 RG 0.6 w 48.00 467.89 m 547.28 467.89 l S
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 453.89 Td (User completes assessment, mandatory fields and consent are validated, triage/risk scoring runs, RAG) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 441.39 Td (context is retrieved, a base safety report is built, Gemini may enhance it, and the result is saved and) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 428.89 Td (downloadable as PDF.) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 411.39 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 411.39 Td (Fail-closed if LLM enhancement fails) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 399.19 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 399.19 Td (Audit log records generation) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 386.99 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 386.99 Td (Doctor-ready questions and reminders included) Tj ET
+BT 0.06 0.17 0.36 rg /F2 16 Tf 48.00 367.79 Td (14. Safety and Guardrails) Tj ET
+0.82 0.85 0.88 RG 0.6 w 48.00 359.79 m 547.28 359.79 l S
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 345.79 Td (HealthGuard does not diagnose, prescribe, or recommend dosage. Safety rules refuse medication changes,) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 333.29 Td (escalate red flags, use calm wording, and avoid scary language.) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 315.79 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 315.79 Td (Prompt injection prevention) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 303.59 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 303.59 Td (PHI/privacy protection) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 291.39 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 291.39 Td (Static disclaimer strategy) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 279.19 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 279.19 Td (Doctor consultation guidance) Tj ET
+BT 0.06 0.17 0.36 rg /F2 16 Tf 48.00 259.99 Td (15. User Memory and Chat History Isolation) Tj ET
+0.82 0.85 0.88 RG 0.6 w 48.00 251.99 m 547.28 251.99 l S
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 237.99 Td (Memory is needed for follow-ups but must be scoped. The app uses user_id and conversation_id, never mixes) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 225.49 Td (users, and does not mix old conversations unless opened.) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 207.99 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 207.99 Td (Latest memory bug fix: save current message first) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 195.79 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 195.79 Td (Query latest rows DESC) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 183.59 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 183.59 Td (Reverse before LLM prompt) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 171.39 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 171.39 Td (Frontend active conversation stored per user) Tj ET
+0.95 0.97 0.99 rg 0.95 0.97 0.99 RG 44.00 88.19 507.28 72.00 re f
+BT 0.05 0.07 0.10 rg /F3 7.6 Tf 48.00 146.19 Td (SELECT role, content, created_at) Tj ET
+BT 0.05 0.07 0.10 rg /F3 7.6 Tf 48.00 136.19 Td (FROM chat_messages) Tj ET
+BT 0.05 0.07 0.10 rg /F3 7.6 Tf 48.00 126.19 Td (WHERE user_id = :user_id AND conversation_id = :conversation_id) Tj ET
+BT 0.05 0.07 0.10 rg /F3 7.6 Tf 48.00 116.19 Td (ORDER BY id DESC) Tj ET
+BT 0.05 0.07 0.10 rg /F3 7.6 Tf 48.00 106.19 Td (LIMIT 10;) Tj ET
+BT 0.05 0.07 0.10 rg /F3 7.6 Tf 48.00 96.19 Td (messages = list\(reversed\(messages\)\)) Tj ET
+endstream
+endobj
+14 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 15 0 R >>
+endobj
+15 0 obj
+<< /Length 7944 >>
+stream
+0.06 0.17 0.36 rg 0.06 0.17 0.36 RG 0.00 803.89 595.28 38.00 re f
+BT 1 1 1 rg /F2 9 Tf 48.00 817.89 Td (HealthGuard AI - Senior Software Engineer / GenAI Interview Guide) Tj ET
+BT 0.25 0.29 0.36 rg /F1 8 Tf 48.00 28.00 Td (Healthcare GenAI | RAG | Voice Assistant | Patient Safety Chatbot) Tj ET
+BT 0.25 0.29 0.36 rg /F1 8 Tf 502.28 28.00 Td (Page 5) Tj ET
+BT 0.06 0.17 0.36 rg /F2 16 Tf 48.00 773.89 Td (16. Database Design) Tj ET
+0.82 0.85 0.88 RG 0.6 w 48.00 765.89 m 547.28 765.89 l S
+BT 1 1 1 rg /F3 7.5 Tf 48.00 751.89 Td (Table                    | Purpose                                                             ) Tj ET
+0.06 0.17 0.36 rg 0.06 0.17 0.36 RG 44.00 748.89 507.28 13.00 re f
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 735.89 Td (users                    | identity, email, role, verification                                 ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 724.89 Td (sessions                 | active login records                                                ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 713.89 Td (email_verifications      | OTP and reset tokens                                                ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 702.89 Td (patient_profiles         | demographics and lifestyle                                          ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 691.89 Td (assessments              | structured health inputs                                            ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 680.89 Td (reports                  | generated report JSON and status                                    ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 669.89 Td (chat_conversations       | conversation owner and metadata                                     ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 658.89 Td (chat_messages            | role, content, sources, flags                                       ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 647.89 Td (rag_documents            | uploaded/admin documents                                            ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 636.89 Td (rag_chunks               | chunk text and embeddings                                           ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 625.89 Td (knowledge_documents      | admin trusted knowledge                                             ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 614.89 Td (audit_logs               | compliance events                                                   ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 603.89 Td (doctor_reviews           | review notes, status, signature                                     ) Tj ET
+BT 0.06 0.17 0.36 rg /F2 16 Tf 48.00 580.89 Td (17. API Design) Tj ET
+0.82 0.85 0.88 RG 0.6 w 48.00 572.89 m 547.28 572.89 l S
+BT 1 1 1 rg /F3 7.5 Tf 48.00 558.89 Td (Endpoint                                 | Purpose                                             ) Tj ET
+0.06 0.17 0.36 rg 0.06 0.17 0.36 RG 44.00 555.89 507.28 13.00 re f
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 542.89 Td (POST /api/auth/register                  | Create user                                         ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 531.89 Td (POST /api/auth/login                     | Login                                               ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 520.89 Td (POST /api/auth/verify-email              | Verify OTP                                          ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 509.89 Td (GET /api/auth/sso/{provider}/start       | Start SSO                                           ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 498.89 Td (GET /api/auth/sso/{provider}/callback    | SSO callback                                        ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 487.89 Td (POST /api/reports/generate               | Generate report                                     ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 476.89 Td (GET /api/reports                         | List reports                                        ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 465.89 Td (GET /api/reports/{id}                    | Read report                                         ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 454.89 Td (GET /api/reports/{id}/download           | Download PDF                                        ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 443.89 Td (POST /api/chat/health-question           | Chatbot                                             ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 432.89 Td (POST /api/documents/upload               | Upload/index document                               ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 421.89 Td (GET /api/health/rag                      | RAG health                                          ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 410.89 Td (POST /api/admin/knowledge                | Add knowledge                                       ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 399.89 Td (GET /api/admin/knowledge                 | List knowledge                                      ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 388.89 Td (GET /api/doctor/reports/pending          | Doctor queue                                        ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 377.89 Td (POST /api/doctor/reports/{id}/review     | Doctor review                                       ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 366.89 Td (GET /api/health                          | App health                                          ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 355.89 Td (GET /api/health/db                       | DB health                                           ) Tj ET
+BT 0.06 0.09 0.16 rg /F3 7.2 Tf 48.00 344.89 Td (GET /api/health/llm                      | LLM health                                          ) Tj ET
+BT 0.06 0.17 0.36 rg /F2 16 Tf 48.00 321.89 Td (18. LLM Integration) Tj ET
+0.82 0.85 0.88 RG 0.6 w 48.00 313.89 m 547.28 313.89 l S
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 299.89 Td (LLM provider abstraction supports Gemini and OpenAI-ready providers. The LLM enhances structured safe) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 287.39 Td (output; it is not the primary safety engine. JSON response contracts, retries, token limits, and fail-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 274.89 Td (closed behavior reduce risk.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 16 Tf 48.00 253.39 Td (19. Prompt Engineering) Tj ET
+0.82 0.85 0.88 RG 0.6 w 48.00 245.39 m 547.28 245.39 l S
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 231.39 Td (Prompts define system behavior, RAG context usage, concise chatbot answers, voice follow-ups, safety) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 218.89 Td (refusal, and JSON output. Prompt engineering prevents hallucination by constraining context and style.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 16 Tf 48.00 197.39 Td (20. Fine-Tuning vs Prompt Engineering) Tj ET
+0.82 0.85 0.88 RG 0.6 w 48.00 189.39 m 547.28 189.39 l S
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 175.39 Td (Prompt engineering changes instructions. Fine-tuning trains behavior. RAG supplies dynamic knowledge.) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 162.89 Td (Fine-tune repeated classifiers such as intent/safety/lab extraction, but do not fine-tune private patient) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 150.39 Td (records.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 16 Tf 48.00 128.89 Td (21. Handling Large File Uploads) Tj ET
+0.82 0.85 0.88 RG 0.6 w 48.00 120.89 m 547.28 120.89 l S
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 106.89 Td (For 5000 Excel files, save the file, create a job, enqueue with Redis/Celery, parse in workers using) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 94.39 Td (openpyxl read_only mode, batch insert rows, create RAG chunks, track progress, retry failures, and) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 81.89 Td (isolate users.) Tj ET
+endstream
+endobj
+16 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 17 0 R >>
+endobj
+17 0 obj
+<< /Length 6004 >>
+stream
+0.06 0.17 0.36 rg 0.06 0.17 0.36 RG 0.00 803.89 595.28 38.00 re f
+BT 1 1 1 rg /F2 9 Tf 48.00 817.89 Td (HealthGuard AI - Senior Software Engineer / GenAI Interview Guide) Tj ET
+BT 0.25 0.29 0.36 rg /F1 8 Tf 48.00 28.00 Td (Healthcare GenAI | RAG | Voice Assistant | Patient Safety Chatbot) Tj ET
+BT 0.25 0.29 0.36 rg /F1 8 Tf 502.28 28.00 Td (Page 6) Tj ET
+BT 0.06 0.17 0.36 rg /F2 16 Tf 48.00 773.89 Td (22. Async, Multithreading, and Multiprocessing) Tj ET
+0.82 0.85 0.88 RG 0.6 w 48.00 765.89 m 547.28 765.89 l S
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 751.89 Td (Async uses an event loop for I/O waits. Threads help blocking I/O. Multiprocessing handles CPU-heavy) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 739.39 Td (OCR/PDF parsing. HealthGuard can use async for LLM/DB calls, background threads for SMTP, and workers for) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 726.89 Td (OCR/Excel parsing.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 16 Tf 48.00 705.39 Td (23. Performance Optimization) Tj ET
+0.82 0.85 0.88 RG 0.6 w 48.00 697.39 m 547.28 697.39 l S
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 683.39 Td (Use async FastAPI, background workers, Redis caching, batch embeddings, metadata filters, top_k tuning,) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 670.89 Td (reranking, chunk optimization, smaller models for classification, larger models for final answers, token) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 658.39 Td (limits, streaming, and rate limiting.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 16 Tf 48.00 636.89 Td (24. Monitoring and Observability) Tj ET
+0.82 0.85 0.88 RG 0.6 w 48.00 628.89 m 547.28 628.89 l S
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 614.89 Td (Track API latency, P95 latency, error rate, token usage, cost/request, LLM latency, vector DB latency,) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 602.39 Td (RAG hit rate, hallucination rate, citation coverage, user feedback, queue length, and failed jobs.) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 584.89 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 584.89 Td (OpenTelemetry) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 572.69 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 572.69 Td (Prometheus) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 560.49 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 560.49 Td (Grafana) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 548.29 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 548.29 Td (CloudWatch/Azure Monitor) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 536.09 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 536.09 Td (ELK/Datadog) Tj ET
+BT 0.06 0.17 0.36 rg /F2 16 Tf 48.00 516.89 Td (25. CI/CD Pipeline) Tj ET
+0.82 0.85 0.88 RG 0.6 w 48.00 508.89 m 547.28 508.89 l S
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 494.89 Td (Pipeline: linting, unit tests, integration tests, RAG evaluation, prompt regression tests, security scan,) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 482.39 Td (Docker build, deploy to dev, deploy to staging, manual approval, production deployment, smoke tests,) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 469.89 Td (rollback.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 16 Tf 48.00 448.39 Td (26. Testing Strategy) Tj ET
+0.82 0.85 0.88 RG 0.6 w 48.00 440.39 m 547.28 440.39 l S
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 426.39 Td (Tests cover auth, role guards, patient isolation, chat memory, latest question memory, RAG retrieval,) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 413.89 Td (prompt output, voice assistant, upload, report generation, LLM fail-closed, API health, and privacy) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 401.39 Td (flows.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 16 Tf 48.00 379.89 Td (27. Security and Privacy) Tj ET
+0.82 0.85 0.88 RG 0.6 w 48.00 371.89 m 547.28 371.89 l S
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 357.89 Td (Use auth, RBAC, user-specific records, patient-specific RAG chunks, no cross-user chat history, no) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 345.39 Td (personal Gmail in production, no-reply email with SPF/DKIM/DMARC, .env security, secret management, audit) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 332.89 Td (logs, PHI masking, and HTTPS.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 16 Tf 48.00 311.39 Td (28. Deployment) Tj ET
+0.82 0.85 0.88 RG 0.6 w 48.00 303.39 m 547.28 303.39 l S
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 289.39 Td (Local runs with Uvicorn. Production should use Docker, PostgreSQL, Redis, object storage, reverse) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 276.89 Td (proxy/HTTPS, ngrok for demo only, environment variables, health endpoints, backups, monitoring, and) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 264.39 Td (hardened auth/email setup.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 16 Tf 48.00 242.89 Td (29. Scenarios Implemented) Tj ET
+0.82 0.85 0.88 RG 0.6 w 48.00 234.89 m 547.28 234.89 l S
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 220.89 Td (Registration/email verification, login/dashboard, patient assessment, voice questions, chatbot short) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 208.39 Td (answer and follow-up mode, fever/rash, medication refusal, document upload/RAG indexing, report PDF,) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 195.89 Td (doctor review, admin knowledge, mobile menu, chat memory bug fix, and 5000 Excel upload design.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 16 Tf 48.00 174.39 Td (30. Interview Explanation) Tj ET
+0.82 0.85 0.88 RG 0.6 w 48.00 166.39 m 547.28 166.39 l S
+BT 0.07 0.39 0.40 rg /F2 11.5 Tf 48.00 152.39 Td (30-second explanation) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 135.39 Td (HealthGuard AI is a healthcare GenAI workspace that lets patients ask safe health questions, use voice,) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 122.89 Td (upload reports, complete assessments, and generate doctor-ready educational reports. It uses FastAPI,) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 110.39 Td (RAG, NLP intent understanding, user-specific memory, RBAC, and safety guardrails.) Tj ET
+BT 0.07 0.39 0.40 rg /F2 11.5 Tf 48.00 92.89 Td (2-minute explanation) Tj ET
+endstream
+endobj
+18 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 19 0 R >>
+endobj
+19 0 obj
+<< /Length 5960 >>
+stream
+0.06 0.17 0.36 rg 0.06 0.17 0.36 RG 0.00 803.89 595.28 38.00 re f
+BT 1 1 1 rg /F2 9 Tf 48.00 817.89 Td (HealthGuard AI - Senior Software Engineer / GenAI Interview Guide) Tj ET
+BT 0.25 0.29 0.36 rg /F1 8 Tf 48.00 28.00 Td (Healthcare GenAI | RAG | Voice Assistant | Patient Safety Chatbot) Tj ET
+BT 0.25 0.29 0.36 rg /F1 8 Tf 502.28 28.00 Td (Page 7) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 777.89 Td (The system includes a responsive dashboard, chatbot, voice assistant, document upload, RAG indexing, and) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 765.39 Td (report generation. The backend validates auth and consent, stores chat memory by user and conversation,) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 752.89 Td (runs NLP and safety checks, retrieves RAG context, and uses an LLM abstraction only when useful.) Tj ET
+BT 0.07 0.39 0.40 rg /F2 11.5 Tf 48.00 735.39 Td (5-minute architecture explanation) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 718.39 Td (Start with browser flows: auth, dashboard, assessment, chat, voice, upload, and reports. FastAPI routes) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 705.89 Td (enforce user and role checks. Services handle chat/NLP/safety/RAG/LLM/report/PDF/storage. Uploaded) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 693.39 Td (documents become user-scoped chunks. Reports use triage, risk scoring, RAG context, optional Gemini) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 680.89 Td (enhancement, fail-closed behavior, audit logs, and PDF generation.) Tj ET
+BT 0.07 0.39 0.40 rg /F2 11.5 Tf 48.00 663.39 Td (Senior Engineer / GenAI role) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 646.39 Td (As a Senior Engineer, emphasize modular architecture, testing, memory isolation, RBAC, performance, and) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 633.89 Td (production hardening. As a GenAI Developer, emphasize RAG, prompts, NLP extraction, safety guardrails,) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 621.39 Td (model abstraction, and evaluation.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 16 Tf 48.00 599.89 Td (31. Cross Questions and Answers) Tj ET
+0.82 0.85 0.88 RG 0.6 w 48.00 591.89 m 547.28 591.89 l S
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 577.89 Td (1. Why RAG?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 564.89 Td (RAG grounds answers in uploaded documents and approved knowledge without training private patient data into) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 552.89 Td (the model.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 535.89 Td (2. Why not only LLM?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 522.89 Td (LLMs can hallucinate. HealthGuard uses deterministic safety rules, NLP intent extraction, RAG context, and) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 510.89 Td (tests.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 493.89 Td (3. How do you avoid hallucination?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 480.89 Td (Use scoped retrieval, citations, safe base answers, refusal rules, and prompt regression tests.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 463.89 Td (4. How do embeddings work?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 450.89 Td (Chunks become numeric vectors. Similar vectors represent semantically related content.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 433.89 Td (5. What vector DB did you use?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 420.89 Td (The demo supports local embedding JSON and is ready for pgvector or Qdrant.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 403.89 Td (6. How does chunking work?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 390.89 Td (Documents are split into overlapping chunks with metadata for precise retrieval.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 373.89 Td (7. How do you handle latest records?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 360.89 Td (Fetch latest chat rows DESC, limit them, then reverse to chronological order.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 343.89 Td (8. How do you isolate user data?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 330.89 Td (Every chat, report, and RAG query filters by user_id and conversation_id or ownership.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 313.89 Td (9. How do you handle voice input?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 300.89 Td (Continuous speech recognition captures interim text and sends the final transcript to lightweight chat mode.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 283.89 Td (10. Why async?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 270.89 Td (Async improves throughput for I/O waits such as LLM, DB, SMTP, and vector search.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 253.89 Td (11. Async vs threading vs multiprocessing?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 240.89 Td (Async handles waiting I/O, threads handle blocking I/O, and multiprocessing handles CPU-heavy parsing/OCR.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 223.89 Td (12. How do decorators work?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 210.89 Td (Decorators wrap functions to add behavior such as auth checks, logging, caching, or rate limits.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 193.89 Td (13. How do you handle 5000 Excel uploads?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 180.89 Td (Save files, create jobs, process with Redis/Celery workers, use read_only mode, batch inserts, and progress) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 168.89 Td (tracking.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 151.89 Td (14. What metrics do you monitor?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 138.89 Td (Latency, P95, errors, token usage, cost, LLM latency, vector latency, RAG hit rate, queue length, and) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 126.89 Td (feedback.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 109.89 Td (15. How do you test RAG?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 96.89 Td (Use known documents, expected chunks, citation checks, isolation tests, and prompt regressions.) Tj ET
+endstream
+endobj
+20 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 21 0 R >>
+endobj
+21 0 obj
+<< /Length 5886 >>
+stream
+0.06 0.17 0.36 rg 0.06 0.17 0.36 RG 0.00 803.89 595.28 38.00 re f
+BT 1 1 1 rg /F2 9 Tf 48.00 817.89 Td (HealthGuard AI - Senior Software Engineer / GenAI Interview Guide) Tj ET
+BT 0.25 0.29 0.36 rg /F1 8 Tf 48.00 28.00 Td (Healthcare GenAI | RAG | Voice Assistant | Patient Safety Chatbot) Tj ET
+BT 0.25 0.29 0.36 rg /F1 8 Tf 502.28 28.00 Td (Page 8) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 777.89 Td (16. Prompt engineering vs fine-tuning?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 764.89 Td (Prompting changes instructions; fine-tuning trains behavior. RAG supplies dynamic knowledge.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 747.89 Td (17. How CI/CD works for GenAI?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 734.89 Td (Run unit tests, integration tests, RAG evals, prompt regressions, security scans, Docker build, deploy, and) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 722.89 Td (rollback.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 705.89 Td (18. How do you secure PHI?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 692.89 Td (Use auth, RBAC, owner filters, masked logs, secret management, HTTPS, and audit logs.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 675.89 Td (19. How do you handle LLM failure?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 662.89 Td (Fail closed for reports and use rules-based fallback for safe chat when possible.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 645.89 Td (20. What is fail-closed behavior?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 632.89 Td (Stop a risky operation instead of saving or returning incomplete unsafe output.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 615.89 Td (21. How do you reduce cost?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 602.89 Td (Short prompts, smaller classifiers, top_k tuning, caching, token limits, and avoiding unnecessary LLM calls.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 585.89 Td (22. How do you improve performance?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 572.89 Td (Batch embeddings, cache metadata, tune chunks, use workers, stream responses, and reduce tokens.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 555.89 Td (23. Why FastAPI?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 542.89 Td (It provides typed APIs, validation, OpenAPI docs, async readiness, and clean Python service structure.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 525.89 Td (24. Why Pydantic?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 512.89 Td (It validates data contracts and prevents malformed health data from entering service logic.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 495.89 Td (25. Why layered architecture?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 482.89 Td (It separates routes, schemas, services, storage, RAG, LLM, and security for testability.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 465.89 Td (26. What is the NLP layer?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 452.89 Td (It extracts intent, symptoms, duration, severity, age, medicines, allergies, conditions, and missing fields.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 435.89 Td (27. What intents are detected?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 422.89 Td (Symptom guidance, medicine question, lab report question, diet question, emergency symptom, and info request.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 405.89 Td (28. How are red flags detected?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 392.89 Td (Rules detect chest pain, breathing trouble, bleeding, confusion, fainting, and severe weakness.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 375.89 Td (29. Why no repeated disclaimer?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 362.89 Td (Repeated disclaimers hurt UX; safety appears when risk requires it and static guidance covers general limits.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 345.89 Td (30. How do you refuse medication?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 332.89 Td (The bot says it cannot recommend medication/dosage and asks for context or clinician review.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 315.89 Td (31. How do you handle dosage questions?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 302.89 Td (Dosage is refused because it needs clinician judgment and patient-specific context.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 285.89 Td (32. What is user-specific memory?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 272.89 Td (Recent messages from the current user_id and conversation_id only.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 255.89 Td (33. How was the memory bug fixed?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 242.89 Td (Current user message is saved first, latest rows are fetched DESC, and rows are reversed before prompt use.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 225.89 Td (34. How do you prevent old chats mixing?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 212.89 Td (Backend filters by conversation_id and frontend stores active conversation keys per user.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 195.89 Td (35. Can doctors see patient chats?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 182.89 Td (Not by default. Doctor workflow focuses on reviewable reports, not private chat memory.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 165.89 Td (36. What documents can users upload?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 152.89 Td (Lab reports, prescriptions, discharge summaries, scan notes, doctor notes, vitals, and allergy records.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 135.89 Td (37. What documents should not be uploaded?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 122.89 Td (IDs, bank files, resumes, unrelated photos, or non-health files.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 105.89 Td (38. How do you validate uploads?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 92.89 Td (Size/type checks, malware pattern scan, extraction checks, and audit logging.) Tj ET
+endstream
+endobj
+22 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 23 0 R >>
+endobj
+23 0 obj
+<< /Length 5645 >>
+stream
+0.06 0.17 0.36 rg 0.06 0.17 0.36 RG 0.00 803.89 595.28 38.00 re f
+BT 1 1 1 rg /F2 9 Tf 48.00 817.89 Td (HealthGuard AI - Senior Software Engineer / GenAI Interview Guide) Tj ET
+BT 0.25 0.29 0.36 rg /F1 8 Tf 48.00 28.00 Td (Healthcare GenAI | RAG | Voice Assistant | Patient Safety Chatbot) Tj ET
+BT 0.25 0.29 0.36 rg /F1 8 Tf 502.28 28.00 Td (Page 9) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 777.89 Td (39. How are documents indexed?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 764.89 Td (Extract text, clean, chunk, embed, store metadata, and link chunks to user_id.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 747.89 Td (40. What is metadata filtering?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 734.89 Td (Filtering retrieval by user_id, source type, document ID, category, and ownership.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 717.89 Td (41. Why citations?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 704.89 Td (They make answers auditable and reduce unsupported claims.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 687.89 Td (42. How choose chunk size?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 674.89 Td (Balance semantic completeness, retrieval precision, and token cost.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 657.89 Td (43. What is overlap?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 644.89 Td (Shared text between chunks to preserve context at boundaries.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 627.89 Td (44. What is reranking?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 614.89 Td (A second ranking step to reorder retrieved chunks by final relevance.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 597.89 Td (45. How handle poor retrieval?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 584.89 Td (Ask clarification, lower confidence, avoid pretending context exists, and cite only real sources.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 567.89 Td (46. What does a report include?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 554.89 Td (Risk summary, precautions, diet, wellness plan, doctor questions, reminders, and sources.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 537.89 Td (47. Why mandatory fields?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 524.89 Td (Reports require enough structured data to avoid unsafe generic output.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 507.89 Td (48. Why consent validation?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 494.89 Td (Health data processing must be explicit and auditable.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 477.89 Td (49. What is triage?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 464.89 Td (Rule-based urgent symptom and risk detection before LLM/report generation.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 447.89 Td (50. What is risk scoring?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 434.89 Td (Deterministic scoring across symptoms, lifestyle, conditions, sleep, diet, and red flags.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 417.89 Td (51. How do you handle PDF generation?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 404.89 Td (The report/PDF layer formats structured report data into a doctor-ready document with sections, sources,) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 392.89 Td (review metadata, and page numbers.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 375.89 Td (52. How do you handle doctor review?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 362.89 Td (Doctors review submitted reports, add status, notes, priority, signature, and follow-up guidance without) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 350.89 Td (bypassing patient ownership controls.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 333.89 Td (53. How do you handle admin knowledge?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 320.89 Td (Admins upload trusted knowledge with category and citation metadata so RAG can retrieve approved context.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 303.89 Td (54. How do you handle compliance role?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 290.89 Td (Compliance users inspect audit logs, privacy controls, security status, and operational evidence.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 273.89 Td (55. How do you handle email verification?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 260.89 Td (Registration creates an OTP; the account stays restricted until the email is verified.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 243.89 Td (56. How do you handle Google SSO?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 230.89 Td (The app has provider start/callback scaffolding so production identity can integrate without changing business) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 218.89 Td (flows.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 201.89 Td (57. How do you handle backend route protection?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 188.89 Td (Every protected API validates the token, role, and ownership. Frontend hiding is never trusted.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 171.89 Td (58. How do you handle sessions?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 158.89 Td (Sessions or tokens identify verified users and are checked on each protected request.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 141.89 Td (59. How do you handle CSRF?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 128.89 Td (Cookie-authenticated writes should require a CSRF token so other sites cannot submit actions as the user.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 111.89 Td (60. How do you handle secret management?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 98.89 Td (Local .env is for demo only. Production should use a cloud secret manager or vault.) Tj ET
+endstream
+endobj
+24 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 25 0 R >>
+endobj
+25 0 obj
+<< /Length 5975 >>
+stream
+0.06 0.17 0.36 rg 0.06 0.17 0.36 RG 0.00 803.89 595.28 38.00 re f
+BT 1 1 1 rg /F2 9 Tf 48.00 817.89 Td (HealthGuard AI - Senior Software Engineer / GenAI Interview Guide) Tj ET
+BT 0.25 0.29 0.36 rg /F1 8 Tf 48.00 28.00 Td (Healthcare GenAI | RAG | Voice Assistant | Patient Safety Chatbot) Tj ET
+BT 0.25 0.29 0.36 rg /F1 8 Tf 502.28 28.00 Td (Page 10) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 777.89 Td (61. How do you handle SPF?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 764.89 Td (SPF authorizes which mail servers can send email for the domain.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 747.89 Td (62. How do you handle DKIM?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 734.89 Td (DKIM signs email so receivers can verify it came from an authorized domain sender.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 717.89 Td (63. How do you handle DMARC?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 704.89 Td (DMARC tells receivers what to do when SPF or DKIM fails and improves email trust.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 687.89 Td (64. How do you handle no personal Gmail?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 674.89 Td (Production should use a domain no-reply sender with SPF, DKIM, DMARC, auditability, and deliverability.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 657.89 Td (65. How do you handle PHI masking?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 644.89 Td (Logs should avoid raw health text and store IDs, hashes, event types, and limited metadata.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 627.89 Td (66. How do you handle audit logging?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 614.89 Td (Important actions such as login, upload, report generation, review, and deletion are recorded.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 597.89 Td (67. How do you handle privacy export?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 584.89 Td (Users can export their stored reports, chats, consents, and related health data.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 567.89 Td (68. How do you handle delete health data?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 554.89 Td (A confirmation flow deletes user-owned reports, chats, documents, and profiles.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 537.89 Td (69. How do you handle voice silence detection?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 524.89 Td (A timer resets when speech arrives and auto-stops after five seconds of silence.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 507.89 Td (70. How do you handle interim transcripts?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 494.89 Td (Interim results make speech capture feel live and prevent losing partial phrases.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 477.89 Td (71. How do you handle manual stop?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 464.89 Td (Manual Stop lets the user finish immediately without waiting for silence detection.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 447.89 Td (72. How do you handle voice assessment separation?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 434.89 Td (Voice questions go to lightweight chatbot mode unless the user explicitly starts assessment/report generation.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 417.89 Td (73. How do you handle voice follow-ups?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 404.89 Td (The bot asks one short question at a time and limits follow-ups to a few useful details.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 387.89 Td (74. How do you handle voice summary?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 374.89 Td (After enough details, the bot summarizes symptoms and gives precautions, diet, hydration, rest, and doctor-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 362.89 Td (prep notes.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 345.89 Td (75. How do you handle safe wording?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 332.89 Td (The assistant uses calm wording such as consult a clinician or seek urgent care for specific red flags.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 315.89 Td (76. How do you handle allergy extraction?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 302.89 Td (The NLP layer scans allergy/allergic phrases and stores mentioned allergy context.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 285.89 Td (77. How do you handle age extraction?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 272.89 Td (The NLP layer detects phrases such as age is, I am, or I'm followed by a number.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 255.89 Td (78. How do you handle severity extraction?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 242.89 Td (Severity can be mild/moderate/severe, a 1-10 score, or a high temperature value.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 225.89 Td (79. How do you handle duration extraction?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 212.89 Td (Duration is extracted from phrases like for two days, since yesterday, today, or for 3 hours.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 195.89 Td (80. How do you handle medicine extraction?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 182.89 Td (Medicine intent is detected from medicine, medication, tablet, antibiotic, can I take, and similar wording.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 165.89 Td (81. How do you handle condition extraction?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 152.89 Td (Conditions such as diabetes, BP, asthma, thyroid, cholesterol, kidney, and heart disease are recognized.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 135.89 Td (82. How do you handle follow-up selection?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 122.89 Td (Missing required fields for the detected intent decide the next single follow-up question.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 105.89 Td (83. How do you handle default answer style?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 92.89 Td (The chatbot defaults to 1-3 short lines and avoids long paragraphs unless requested.) Tj ET
+endstream
+endobj
+26 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 27 0 R >>
+endobj
+27 0 obj
+<< /Length 5776 >>
+stream
+0.06 0.17 0.36 rg 0.06 0.17 0.36 RG 0.00 803.89 595.28 38.00 re f
+BT 1 1 1 rg /F2 9 Tf 48.00 817.89 Td (HealthGuard AI - Senior Software Engineer / GenAI Interview Guide) Tj ET
+BT 0.25 0.29 0.36 rg /F1 8 Tf 48.00 28.00 Td (Healthcare GenAI | RAG | Voice Assistant | Patient Safety Chatbot) Tj ET
+BT 0.25 0.29 0.36 rg /F1 8 Tf 502.28 28.00 Td (Page 11) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 777.89 Td (84. How do you handle streaming responses?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 764.89 Td (Streaming sends token-like chunks so users see progress before the final answer is complete.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 747.89 Td (85. How do you handle rate limiting?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 734.89 Td (Rate limits protect APIs from abuse and accidental repeated requests.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 717.89 Td (86. How do you handle upload scanning?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 704.89 Td (Uploads are checked for size, type, suspicious content, and extraction viability before indexing.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 687.89 Td (87. How do you handle unsupported browser voice?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 674.89 Td (The UI shows a clear message and allows manual transcript typing.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 657.89 Td (88. How do you handle ASR failure?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 644.89 Td (The backend returns a safe generic transcription error without leaking provider internals.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 627.89 Td (89. How do you handle local vector store?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 614.89 Td (The demo can store embeddings as JSON locally for simple semantic retrieval.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 597.89 Td (90. How do you handle pgvector?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 584.89 Td (pgvector is useful when PostgreSQL is already the primary database and vector search should stay nearby.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 567.89 Td (91. How do you handle Qdrant?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 554.89 Td (Qdrant is suitable for a dedicated scalable vector service with payload filtering and fast retrieval.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 537.89 Td (92. How do you handle prompt output tests?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 524.89 Td (Prompt regression tests assert style, refusal language, shortness, stages, and no unsafe content.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 507.89 Td (93. How do you handle RAG evaluation?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 494.89 Td (RAG evals check that known queries retrieve expected chunks and cite correct sources.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 477.89 Td (94. How do you handle backups?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 464.89 Td (Production needs database, object storage, vector index, and audit log backups with restore drills.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 447.89 Td (95. How do you handle rollback?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 434.89 Td (Rollback returns the system to a known-good deployment if smoke tests or metrics fail.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 417.89 Td (96. How do you handle model upgrades?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 404.89 Td (Model upgrades require prompt regression, safety, RAG, and cost/latency tests before release.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 387.89 Td (97. How do you handle token optimization?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 374.89 Td (Keep prompts short, retrieve only relevant chunks, limit memory, and choose compact output.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 357.89 Td (98. How do you handle small classifier model?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 344.89 Td (A smaller model or rules can classify intent cheaply before calling a larger model.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 327.89 Td (99. How do you handle large final model?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 314.89 Td (A larger model is reserved for final synthesis when context and safety checks justify it.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 9.4 Tf 48.00 297.89 Td (100. How do you handle hallucination rate?) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.0 Tf 48.00 284.89 Td (Track unsupported claims and improve prompts/retrieval when the rate rises.) Tj ET
+BT 0.06 0.17 0.36 rg /F2 16 Tf 48.00 263.89 Td (32. Final Summary) Tj ET
+0.82 0.85 0.88 RG 0.6 w 48.00 255.89 m 547.28 255.89 l S
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 241.89 Td (HealthGuard AI is strong because it combines healthcare safety, RAG, voice, NLP intent understanding,) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 229.39 Td (memory isolation, role-based access, document processing, report generation, doctor review, audit) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 216.89 Td (logging, and regression testing. It is demo-ready and has a clear roadmap for PostgreSQL,) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 204.39 Td (pgvector/Qdrant, Redis/Celery, object storage, HTTPS, SIEM, secret managers, and formal compliance) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.5 Tf 48.00 191.89 Td (controls.) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 174.39 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 174.39 Td (Explain it confidently from user workflow to backend architecture.) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 162.19 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 162.19 Td (Emphasize that LLM is not the safety engine.) Tj ET
+BT 0.07 0.39 0.40 rg /F2 9.5 Tf 52.00 149.99 Td (-) Tj ET
+BT 0.07 0.09 0.13 rg /F1 9.2 Tf 64.00 149.99 Td (Tie every design decision to safety, scalability, maintainability, or user trust.) Tj ET
+endstream
+endobj
+xref
+0 28
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000191 00000 n 
+0000000261 00000 n 
+0000000336 00000 n 
+0000000404 00000 n 
+0000000556 00000 n 
+0000002354 00000 n 
+0000002506 00000 n 
+0000009851 00000 n 
+0000010005 00000 n 
+0000017065 00000 n 
+0000017219 00000 n 
+0000024142 00000 n 
+0000024296 00000 n 
+0000032293 00000 n 
+0000032447 00000 n 
+0000038504 00000 n 
+0000038658 00000 n 
+0000044671 00000 n 
+0000044825 00000 n 
+0000050764 00000 n 
+0000050918 00000 n 
+0000056616 00000 n 
+0000056770 00000 n 
+0000062798 00000 n 
+0000062952 00000 n 
+trailer
+<< /Size 28 /Root 1 0 R >>
+startxref
+68781
+%%EOF

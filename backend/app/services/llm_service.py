@@ -11,6 +11,7 @@ from typing import Any
 from backend.app.core.env import load_dotenv
 from backend.app.db.store import json_dumps
 from backend.app.schemas.health import AssessmentRequest, ChatRequest, KnowledgeSource
+from backend.app.services.chat_support_data import CONCISE_CHAT_RULES
 
 
 class LLMService:
@@ -86,7 +87,13 @@ class LLMService:
                 "red_flags": base_report["red_flags"],
             },
             "retrieved_context": [
-                {"title": source.title, "excerpt": source.excerpt[:280]}
+                {
+                    "citation": source.citation,
+                    "title": source.title,
+                    "source_type": source.source_type,
+                    "similarity_score": source.similarity_score,
+                    "excerpt": source.excerpt[:280],
+                }
                 for source in sources[:3]
             ],
             "requirements": [
@@ -137,10 +144,16 @@ class LLMService:
             "retrieved_context": [source.model_dump(mode="json") for source in sources],
             "fallback_answer": fallback_answer,
             "requirements": [
+                *CONCISE_CHAT_RULES,
                 "Do not diagnose.",
                 "Do not prescribe, start, stop, or change medication.",
                 "Tell the user to seek emergency care for red flag symptoms.",
-                "Keep the answer concise and educational.",
+                "Answer only the user's question.",
+                "Use friendly human wording.",
+                "Keep the answer under 18 words unless the user asks for details.",
+                "Do not mention generating reports unless the user asks about reports.",
+                "If retrieved_context is relevant, answer only from it.",
+                "If context is missing, say what information is needed.",
             ],
         }
         schema = {

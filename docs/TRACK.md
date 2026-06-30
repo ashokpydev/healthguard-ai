@@ -13,6 +13,168 @@ This document is the running implementation record for HealthGuard AI. Update it
 
 ## Update Log
 
+### 2026-06-29 - Floating chatbot drawer
+
+Implemented:
+
+- Added a dedicated simple-question support dataset for common chatbot doubts.
+- Made simple chatbot answers deterministic, friendly, and short so users do not receive report-style responses for basic questions.
+- Disabled live LLM enhancement for chat by default unless `CHAT_LLM_ENABLED=true`, reducing latency and irrelevant drift.
+- Tightened chatbot LLM instructions for optional live mode to answer only the user question in 10-20 human words.
+- Cleaned the chatbot drawer into a compact chat UI with visible answer area, three FAQ chips, and a single send-icon action.
+- Moved chatbot responses above the message composer and auto-scrolls to the latest answer so users can see replies immediately.
+- Clear the chatbot input immediately after Send while the answer streams.
+- Show recurring safety/disclaimer guidance only for risky, emergency, or doctor-consultation chatbot responses.
+- Tightened chatbot memory to load previous messages only from the logged-in user's own conversation.
+- Enforced chat history isolation by `user_id` and `conversation_id`; foreign conversation IDs now return not found.
+- Redesigned the authenticated dashboard navigation for mobile with a hamburger menu, touch-friendly dropdown drawer, auto-close behavior, and mobile logout access.
+- Rewrote the welcome/dashboard message to clearly explain HealthGuard AI's purpose as a clinical safety workspace for health questions, assessments, documents, voice, and doctor-ready reports.
+- Tightened mobile hero spacing, action button stacking, menu branding, and workflow cards for smaller screens.
+- Added concise chatbot response mode: 1-3 short lines, minimal words, one follow-up when required, no diagnosis, no prescribing, and no repeated disclaimers.
+- Added trusted-context chatbot answering so retrieved RAG snippets are used when available, with compact source display in the UI.
+- Added a clean chatbot loading state and kept mobile chat output short and readable.
+- Fixed voice input resilience by preferring browser speech recognition on supported mobile browsers and using server Hugging Face ASR only as fallback.
+- Replaced long ASR provider failure details with a short user-safe manual transcript message while preserving audit logging.
+- Changed voice Q&A to a lightweight chatbot flow: transcript only, no assessment profile extraction, no uploaded-document context attachment, no report-style response.
+- Added short safety handling for voice-style medication, high-fever, and fever-with-rash questions.
+- Improved voice prompting with continuous Web Speech listening, interim transcript retention, manual Stop, 5-second silence auto-stop, auto-restart on early recognition end, and clear Listening/Processing/Responding states.
+- Added discard-safe Clear behavior so clearing voice capture does not submit partial speech.
+- Replaced the embedded chatbot section with an icon-only floating bot launcher.
+- Added a right-side floating chatbot dialog that slides in from the right and uses about 20% desktop width.
+- Added minimize behavior through the close control, Escape key, and Finish button so the assistant returns to the bot icon.
+- Added `frontend/assets/chatbot-logo.png` and used the supplied image as the chatbot logo in the launcher and dialog header.
+- Added persistent per-user chatbot conversations, messages, report links, and feedback storage.
+- Added chatbot history loading so users can continue prior doubts.
+- Added streamed chatbot answers through `/api/chat/health-question/stream` for better perceived response speed.
+- Added suggested starter questions from uploaded-document context and latest generated report doctor questions.
+- Added urgent symptom escalation UI inside the floating chatbot when red flags are detected.
+- Added feedback buttons for helpful, not helpful, and unsafe answer reporting.
+- Added admin-managed knowledge categories and citation metadata for chatbot/RAG governance.
+- Added linked chatbot conversations into report retrieval and PDF export so doctors can review patient chat context.
+- Reduced the authenticated home-panel headline scale and replaced the oversized user-name heading with a concise application-intention message.
+- Connected the typed chatbot UI to the existing authenticated `/api/chat/health-question` endpoint.
+- Reused patient profile, consent, uploaded-document context, safety alerts, RAG sources, and disclaimer rendering for chatbot answers.
+- Added copy-from-assessment, finish/minimize, loading, error, Escape-close, and keyboard submit (`Ctrl/Cmd + Enter`) states.
+- Updated the application tour to describe the floating chatbot icon.
+
+Verified:
+
+- Confirmed `frontend/app.js` passes `node --check`.
+- Confirmed backend import succeeds with bytecode writing disabled.
+- Added regression coverage for per-user chat history isolation and same-conversation chat memory.
+- Confirmed the running local app serves the floating chatbot dialog and no longer serves the embedded chat section.
+- Confirmed Python imports pass with bytecode writing disabled after a Windows pycache lock blocked direct `py_compile`.
+- Confirmed `python -m pytest backend\tests\test_safety_acceptance.py` passes 33/33 tests.
+
+### 2026-06-28 - Architecture PDF and Figma diagram
+
+Implemented:
+
+- Created an editable FigJam architecture diagram for HealthGuard AI covering client apps, FastAPI/API layer, core services, data stores, external integrations, and operational jobs.
+- Added `scripts/generate_architecture_pdf.py` to generate a dependency-free project architecture PDF.
+- Generated `output/pdf/HealthGuard_AI_Project_Architecture.pdf` with:
+  - project overview
+  - end-to-end architecture diagram
+  - RAG and LLM orchestration
+  - security, privacy, and compliance controls
+  - pending production architecture items
+
+Verified:
+
+- Confirmed the PDF has a valid `%PDF-1.4` header and `%%EOF` marker.
+- Confirmed the PDF contains all expected architecture section titles.
+- Poppler rendering was not available locally through `pdftoppm`, so visual rendering verification was limited to structural PDF checks.
+
+### 2026-06-27 - Healthcare compliance readiness uplift
+
+Implemented:
+
+- Added persistent `consent_records` for report, assessment, chat, and triage processing consent.
+- Added `privacy_requests` tracking for patient health-data deletion actions.
+- Added patient privacy export endpoint: `GET /api/privacy/export`.
+- Added confirmed patient health-data deletion endpoint: `POST /api/privacy/delete-health-data`.
+- Added admin/compliance-only compliance status endpoint: `GET /api/health/compliance`.
+- Added global security response headers: content type nosniff, frame denial, referrer policy, permissions policy, and CSP.
+- Kept audit logs intact during health-data deletion so compliance evidence remains available while user-owned health data is removed.
+
+Verified:
+
+- Added regression coverage for security headers, compliance status role guard, consent persistence, patient export, and health-data deletion.
+- `python -m pytest` passed with 27 tests.
+- `node --check frontend\app.js` passed.
+
+### 2026-06-27 - RAG vector backend upgrade and citations
+
+Implemented:
+
+- Added optional PostgreSQL `pgvector` support for `rag_chunks.embedding_vector` when the database has the `vector` extension installed.
+- Kept JSON-vector cosine retrieval as the portable SQLite/local fallback.
+- Improved uploaded-document chunking from fixed word windows to sentence/paragraph-aware chunks with overlap.
+- Added chunk metadata: character offsets, citation labels, metadata JSON, token count, and embedding backend details.
+- Stored embeddings for every chunk and uses pgvector distance ordering when available.
+- Preserved patient isolation by retrieving only global approved knowledge plus the logged-in patient's own document chunks.
+- Added citation metadata (`citation`, `document_id`, `chunk_index`, `similarity_score`) to report/chat sources.
+- Added visible Source citations in generated report output and richer RAG reference citations in PDF export.
+
+Verified:
+
+- Added regression coverage for vector-store status, chunk metadata, stored embeddings, patient-isolated retrieval, citations, and similarity scores.
+- `python -m pytest` passed with 26 tests.
+- `node --check frontend\app.js` passed.
+
+### 2026-06-27 - Branded PDF reports, charts, and report version history
+
+Implemented:
+
+- Added `report_versions` persistence and `reports.current_version` tracking.
+- Saved version `v1` whenever a new LLM-enhanced report is created.
+- Added doctor-review version events so clinical review updates increment report history.
+- Added `GET /api/reports/{report_id}/versions` with the same patient/role access rules as report detail.
+- Upgraded the PDF export with a branded header, clear patient snapshot, metric chart bars for risk score/BMI/sleep/lifestyle risk, symptoms, diet, activity, RAG references, doctor guidance, review metadata, and version history.
+- Updated saved/generated report UI labels to show report version information.
+
+Verified:
+
+- Added regression coverage for generated report versioning, review version increments, version-history API, and branded PDF sections.
+- `python -m pytest` passed with 26 tests.
+- `node --check frontend\app.js` passed.
+
+### 2026-06-27 - Doctor workflow dashboard and patient notifications
+
+Implemented:
+
+- Added submitted-to-assigned lifecycle handling for new reports.
+- Added doctor queue filtering by pending, reviewed, urgent, and all reports.
+- Added `/api/doctor/reports/queue` and expanded the existing pending queue endpoint with filter support.
+- Added doctor dashboard controls for report assignment, priority, lifecycle status updates, comments, and clinician signature.
+- Added patient notification storage and APIs for doctor-review updates.
+- Added patient dashboard notification rendering with mark-read support.
+
+Verified:
+
+- Extended regression coverage for doctor queue filtering and patient notifications after review.
+- `python -m pytest` passed with 26 tests.
+- `node --check frontend\app.js` passed.
+
+### 2026-06-27 - Production auth hardening
+
+Implemented:
+
+- Replaced demo session tokens with signed HMAC JWT-style session tokens containing issue and expiry claims.
+- Added database-backed session expiry and revocation, plus `/api/auth/logout`.
+- Added PBKDF2 password hashing for new passwords with legacy-hash verification compatibility.
+- Added failed-login tracking, temporary account lockout, and configurable lockout thresholds.
+- Added password reset request/confirm endpoints with email/outbox delivery and reset-token expiry.
+- Added frontend password reset modal and backend logout call.
+- Restricted live SSO to Google; Facebook and Instagram are visibly/API-disabled until real OAuth apps are configured and reviewed.
+- Added auth configuration variables to `.env.example`.
+
+Verified:
+
+- Added regression coverage for lockout, password reset, session revocation, and disabled Facebook/Instagram SSO.
+- `python -m pytest` passed with 26 tests.
+- `node --check frontend\app.js` passed.
+
 ### 2026-06-27 - User-specific saved reports view
 
 Implemented:

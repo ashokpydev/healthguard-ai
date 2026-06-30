@@ -61,13 +61,19 @@ class ReportService:
                 ),
             )
             concerns.append("Uploaded document findings that may need clinician interpretation")
+        sources = self._with_citations(sources)
         report_payload = {
             "patient_summary": {
                 "age": request.profile.age,
                 "gender": request.profile.gender,
                 "occupation": request.profile.occupation,
                 "location": request.profile.location,
+                "climate": request.profile.climate,
                 "bmi": request.profile.bmi,
+                "sleep_hours": request.profile.sleep_hours,
+                "exercise_frequency": request.profile.exercise_frequency,
+                "diet_style": request.profile.diet_style,
+                "food_habits": request.profile.food_habits,
             },
             "risk_summary": risk,
             "possible_health_concerns_to_discuss_with_doctor": concerns,
@@ -122,6 +128,26 @@ class ReportService:
         report_payload["generation_engine"] = llm_result.get("generation_engine", "rules")
         report_payload["llm_error"] = None
         return HealthReport(**report_payload)
+
+    def _with_citations(self, sources: list[KnowledgeSource]) -> list[KnowledgeSource]:
+        cited: list[KnowledgeSource] = []
+        for index, source in enumerate(sources, start=1):
+            citation = source.citation or f"S{index}"
+            title = source.title
+            if not title.startswith(f"[{citation}]"):
+                title = f"[{citation}] {title}"
+            cited.append(
+                KnowledgeSource(
+                    title=title,
+                    source_type=source.source_type,
+                    excerpt=source.excerpt,
+                    citation=citation,
+                    document_id=source.document_id,
+                    chunk_index=source.chunk_index,
+                    similarity_score=source.similarity_score,
+                )
+            )
+        return cited
 
     def _concerns(self, request: AssessmentRequest, factors: list[str]) -> list[str]:
         concerns: list[str] = []

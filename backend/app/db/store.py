@@ -114,10 +114,19 @@ class ConnectionAdapter:
                 "patient_profiles",
                 "assessments",
                 "reports",
+                "report_versions",
+                "consent_records",
+                "privacy_requests",
                 "knowledge_documents",
                 "rag_documents",
                 "rag_chunks",
+                "notifications",
                 "audit_logs",
+                "chat_conversations",
+                "chat_messages",
+                "chat_feedback",
+                "chat_analytics",
+                "knowledge_categories",
             ]
         )
 
@@ -148,11 +157,19 @@ def init_db() -> None:
         _ensure_column(conn, "users", "verification_sent_at", "TEXT")
         _ensure_column(conn, "users", "sso_provider", "TEXT")
         _ensure_column(conn, "users", "sso_subject", "TEXT")
+        _ensure_column(conn, "users", "failed_login_count", "INTEGER NOT NULL DEFAULT 0")
+        _ensure_column(conn, "users", "locked_until", "TEXT")
+        _ensure_column(conn, "users", "password_reset_token", "TEXT")
+        _ensure_column(conn, "users", "password_reset_expires_at", "TEXT")
+        _ensure_column(conn, "users", "password_changed_at", "TEXT")
+        _ensure_column(conn, "sessions", "expires_at", "TEXT")
+        _ensure_column(conn, "sessions", "revoked_at", "TEXT")
         _ensure_column(conn, "reports", "assigned_reviewer_id", "INTEGER")
         _ensure_column(conn, "reports", "review_priority", "TEXT NOT NULL DEFAULT 'routine'")
         _ensure_column(conn, "reports", "clinician_signature", "TEXT")
         _ensure_column(conn, "reports", "escalation_reason", "TEXT")
         _ensure_column(conn, "reports", "review_history_json", "TEXT NOT NULL DEFAULT '[]'")
+        _ensure_column(conn, "reports", "current_version", "INTEGER NOT NULL DEFAULT 1")
         _ensure_column(conn, "audit_logs", "ip_address", "TEXT")
         _ensure_column(conn, "audit_logs", "user_agent", "TEXT")
         _ensure_column(conn, "audit_logs", "metadata_json", "TEXT NOT NULL DEFAULT '{}'")
@@ -160,6 +177,19 @@ def init_db() -> None:
         _ensure_column(conn, "audit_logs", "previous_hash", "TEXT")
         _ensure_column(conn, "audit_logs", "retention_until", "TEXT")
         _ensure_column(conn, "audit_logs", "immutable", "INTEGER NOT NULL DEFAULT 1")
+        _ensure_column(conn, "rag_chunks", "char_start", "INTEGER NOT NULL DEFAULT 0")
+        _ensure_column(conn, "rag_chunks", "char_end", "INTEGER NOT NULL DEFAULT 0")
+        _ensure_column(conn, "rag_chunks", "citation_label", "TEXT")
+        _ensure_column(conn, "rag_chunks", "metadata_json", "TEXT NOT NULL DEFAULT '{}'")
+        _ensure_column(conn, "knowledge_documents", "category", "TEXT NOT NULL DEFAULT 'General'")
+        _ensure_column(conn, "knowledge_documents", "citation", "TEXT")
+        _ensure_column(conn, "chat_conversations", "report_id", "INTEGER")
+        _ensure_column(conn, "chat_messages", "prompt_version", "TEXT")
+        _ensure_column(conn, "chat_messages", "answer_source", "TEXT")
+        _ensure_column(conn, "chat_messages", "generation_engine", "TEXT")
+        _ensure_column(conn, "chat_messages", "rag_used", "INTEGER NOT NULL DEFAULT 0")
+        if conn.backend == "postgres":
+            _ensure_pgvector(conn)
 
 
 def _sqlite_schema() -> str:
@@ -190,7 +220,9 @@ def _shared_schema(id_definition: str) -> str:
     CREATE TABLE IF NOT EXISTS sessions (
         token TEXT PRIMARY KEY,
         user_id INTEGER NOT NULL REFERENCES users(id),
-        created_at TEXT NOT NULL
+        created_at TEXT NOT NULL,
+        expires_at TEXT,
+        revoked_at TEXT
     );
 
     CREATE TABLE IF NOT EXISTS email_outbox (
@@ -234,16 +266,58 @@ def _shared_schema(id_definition: str) -> str:
         clinician_signature TEXT,
         escalation_reason TEXT,
         review_history_json TEXT NOT NULL DEFAULT '[]',
+        current_version INTEGER NOT NULL DEFAULT 1,
         created_at TEXT NOT NULL,
         reviewed_at TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS report_versions (
+        id {id_definition},
+        report_id INTEGER NOT NULL REFERENCES reports(id),
+        version_number INTEGER NOT NULL,
+        change_type TEXT NOT NULL,
+        summary TEXT NOT NULL,
+        report_json_snapshot TEXT NOT NULL,
+        actor_user_id INTEGER,
+        created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS consent_records (
+        id {id_definition},
+        user_id INTEGER REFERENCES users(id),
+        action TEXT NOT NULL,
+        consent_text TEXT NOT NULL,
+        consent_version TEXT NOT NULL,
+        ip_address TEXT,
+        user_agent TEXT,
+        created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS privacy_requests (
+        id {id_definition},
+        user_id INTEGER REFERENCES users(id),
+        request_type TEXT NOT NULL,
+        status TEXT NOT NULL,
+        details_json TEXT NOT NULL DEFAULT '{{}}',
+        created_at TEXT NOT NULL,
+        completed_at TEXT
     );
 
     CREATE TABLE IF NOT EXISTS knowledge_documents (
         id {id_definition},
         title TEXT NOT NULL,
         source_type TEXT NOT NULL,
+        category TEXT NOT NULL DEFAULT 'General',
+        citation TEXT,
         content TEXT NOT NULL,
         status TEXT NOT NULL DEFAULT 'approved',
+        created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS knowledge_categories (
+        id {id_definition},
+        name TEXT NOT NULL UNIQUE,
+        description TEXT,
         created_at TEXT NOT NULL
     );
 
@@ -265,6 +339,10 @@ def _shared_schema(id_definition: str) -> str:
         chunk_index INTEGER NOT NULL,
         content TEXT NOT NULL,
         embedding_json TEXT NOT NULL,
+        char_start INTEGER NOT NULL DEFAULT 0,
+        char_end INTEGER NOT NULL DEFAULT 0,
+        citation_label TEXT,
+        metadata_json TEXT NOT NULL DEFAULT '{{}}',
         token_count INTEGER NOT NULL,
         created_at TEXT NOT NULL
     );
@@ -283,6 +361,66 @@ def _shared_schema(id_definition: str) -> str:
         previous_hash TEXT,
         retention_until TEXT,
         immutable INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS notifications (
+        id {id_definition},
+        user_id INTEGER NOT NULL REFERENCES users(id),
+        report_id INTEGER REFERENCES reports(id),
+        title TEXT NOT NULL,
+        message TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'unread',
+        created_at TEXT NOT NULL,
+        read_at TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS chat_conversations (
+        id {id_definition},
+        user_id INTEGER NOT NULL REFERENCES users(id),
+        report_id INTEGER REFERENCES reports(id),
+        title TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'open',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS chat_messages (
+        id {id_definition},
+        conversation_id INTEGER NOT NULL REFERENCES chat_conversations(id),
+        user_id INTEGER NOT NULL REFERENCES users(id),
+        role TEXT NOT NULL,
+        content TEXT NOT NULL,
+        red_flags_json TEXT NOT NULL DEFAULT '[]',
+        sources_json TEXT NOT NULL DEFAULT '[]',
+        doctor_consultation_required INTEGER NOT NULL DEFAULT 0,
+        prompt_version TEXT,
+        answer_source TEXT,
+        generation_engine TEXT,
+        rag_used INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS chat_feedback (
+        id {id_definition},
+        message_id INTEGER NOT NULL REFERENCES chat_messages(id),
+        user_id INTEGER NOT NULL REFERENCES users(id),
+        rating TEXT NOT NULL,
+        reason TEXT,
+        created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS chat_analytics (
+        id {id_definition},
+        user_id INTEGER NOT NULL REFERENCES users(id),
+        conversation_id INTEGER REFERENCES chat_conversations(id),
+        question_text TEXT NOT NULL,
+        intent TEXT,
+        answer_source TEXT,
+        prompt_version TEXT,
+        latency_ms INTEGER NOT NULL DEFAULT 0,
+        rag_used INTEGER NOT NULL DEFAULT 0,
+        unresolved INTEGER NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL
     );
     """
@@ -305,6 +443,26 @@ def _ensure_column(conn: ConnectionAdapter, table_name: str, column_name: str, d
         )
     if not row:
         conn.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {definition}")
+
+
+def _ensure_pgvector(conn: ConnectionAdapter) -> None:
+    extension = conn.execute("SELECT extname FROM pg_extension WHERE extname = ?", ("vector",)).fetchone()
+    if not extension:
+        # pgvector is enabled by running `CREATE EXTENSION vector` with a privileged DB user.
+        return
+    row = conn.execute(
+        """
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_name = ? AND column_name = ?
+        """,
+        ("rag_chunks", "embedding_vector"),
+    ).fetchone()
+    if not row:
+        conn.execute("ALTER TABLE rag_chunks ADD COLUMN embedding_vector vector(128)")
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_rag_chunks_embedding_vector ON rag_chunks USING ivfflat (embedding_vector vector_cosine_ops)"
+    )
 
 
 def row_to_dict(row: dict[str, Any] | None) -> dict[str, Any] | None:

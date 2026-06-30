@@ -3,6 +3,9 @@ const registerForm = document.querySelector("#register-form");
 const loginForm = document.querySelector("#login-form");
 const logoutButton = document.querySelector("#logout");
 const homeLogoutButton = document.querySelector("#home-logout");
+const menuLogoutButton = document.querySelector("#menu-logout");
+const mobileMenuToggle = document.querySelector("#mobile-menu-toggle");
+const workspaceMenu = document.querySelector("#workspace-menu");
 const authStatus = document.querySelector("#auth-status");
 const verifyEmailButton = document.querySelector("#verify-email");
 const loadConfirmationEmailButton = document.querySelector("#load-confirmation-email");
@@ -10,6 +13,11 @@ const resendConfirmationButton = document.querySelector("#resend-confirmation");
 const verificationModal = document.querySelector("#verification-modal");
 const closeVerificationModalButton = document.querySelector("#close-verification-modal");
 const verificationCopy = document.querySelector("#verification-copy");
+const passwordResetModal = document.querySelector("#password-reset-modal");
+const requestPasswordResetButton = document.querySelector("#request-password-reset");
+const closePasswordResetModalButton = document.querySelector("#close-password-reset-modal");
+const sendPasswordResetButton = document.querySelector("#send-password-reset");
+const confirmPasswordResetButton = document.querySelector("#confirm-password-reset");
 const tourModal = document.querySelector("#tour-modal");
 const openTourButton = document.querySelector("#open-tour");
 const closeTourButton = document.querySelector("#close-tour");
@@ -48,23 +56,59 @@ const voiceClearButton = document.querySelector("#voice-clear");
 const voiceTranscript = document.querySelector("#voice-transcript");
 const voiceStatus = document.querySelector("#voice-status");
 const voicePill = document.querySelector("#voice-pill");
+const chatQuestion = document.querySelector("#chat-question");
+const chatSubmitButton = document.querySelector("#chat-submit");
+const chatCopyAssessmentButton = document.querySelector("#chat-copy-assessment");
+const chatClearButton = document.querySelector("#chat-clear");
+const chatStatus = document.querySelector("#chat-status");
+const chatDialog = document.querySelector("#chat-dialog");
+const chatLauncher = document.querySelector("#chat-launcher");
+const chatCloseButton = document.querySelector("#chat-close");
+const chatHistoryPanel = document.querySelector("#chat-history");
+const chatStartersPanel = document.querySelector("#chat-starters");
+const chatUrgentPanel = document.querySelector("#chat-urgent");
+const chatFeedbackPanel = document.querySelector("#chat-feedback");
+const chatConversationSelect = document.querySelector("#chat-conversation-select");
+const chatNewButton = document.querySelector("#chat-new");
+const chatExportButton = document.querySelector("#chat-export");
+const chatDialogScroll = document.querySelector(".chat-dialog-scroll");
 let lastReportId = null;
 let savedReports = [];
 let savedReportsPage = 1;
 const savedReportsPageSize = 5;
+let patientNotifications = [];
+let doctorQueueStatus = "pending";
 let currentUser = JSON.parse(localStorage.getItem("healthguardUser") || "null");
 let pendingVerificationEmail = localStorage.getItem("healthguardPendingEmail") || "";
 let uploadedDocumentContext = null;
 let selectedFoods = [];
 let voiceRecognition = null;
 let lastVoiceAnswer = "";
+let activeChatConversationId = Number(localStorage.getItem(chatConversationStorageKey()) || "0") || null;
+let activeVoiceConversationId = Number(localStorage.getItem(voiceConversationStorageKey()) || "0") || null;
+let lastChatAssistantMessageId = null;
+let visibleChatMessages = [];
 let voiceFinalTranscript = "";
 let voiceManualStop = false;
 let voiceMediaRecorder = null;
 let voiceAudioChunks = [];
 let voiceAudioStream = null;
 let voiceRecordingStartedAt = 0;
+let voiceSilenceTimer = null;
+let voiceRestartTimer = null;
+let voiceIsCapturing = false;
+let voiceFinalizing = false;
+let voiceDiscardCapture = false;
+const voiceSilenceTimeoutMs = 5000;
 let tourStepIndex = 0;
+
+function chatConversationStorageKey(user = currentUser) {
+  return user?.id ? `healthguardChatConversationId:${user.id}` : "healthguardChatConversationId";
+}
+
+function voiceConversationStorageKey(user = currentUser) {
+  return user?.id ? `healthguardVoiceConversationId:${user.id}` : "healthguardVoiceConversationId";
+}
 
 const tourSteps = [
   {
@@ -80,25 +124,31 @@ const tourSteps = [
     visual: "assessment"
   },
   {
-    title: "Step 2: Use voice intake when helpful",
-    copy: "Speak symptoms or a health question. The app records audio, transcribes it with Hugging Face when configured, extracts useful fields, then sends the transcript through the safe chat flow.",
+    title: "Step 2: Ask the floating chatbot",
+    copy: "Use the bot icon to open a compact right-side assistant for health doubts, symptom questions, lifestyle concerns, or uploaded-report follow-ups.",
+    target: "home-panel",
+    visual: "voice"
+  },
+  {
+    title: "Step 3: Use voice intake when helpful",
+    copy: "Speak symptoms or a health question. The app captures a transcript when the browser supports speech input, then sends it through the safe chat flow.",
     target: "voice-panel",
     visual: "voice"
   },
   {
-    title: "Step 3: Upload optional health documents",
+    title: "Step 4: Upload optional health documents",
     copy: "Patients can add lab notes or previous reports. Extracted content is indexed for patient-isolated supporting context and used only when generating or answering relevant questions.",
     target: "documents-panel",
     visual: "documents"
   },
   {
-    title: "Step 4: Generate and review the report",
+    title: "Step 5: Generate and review the report",
     copy: "The report combines structured intake, safety rules, retrieved knowledge, and the configured LLM. If the LLM fails, no report is saved.",
     target: "reports-panel",
     visual: "report"
   },
   {
-    title: "Step 5: Saved reports and clinician workflow",
+    title: "Step 6: Saved reports and clinician workflow",
     copy: "Patients only see their own reports. Doctors and dieticians can review patient folders, assign priority, add signatures, escalate, and maintain review history.",
     target: "history",
     visual: "review"
@@ -238,6 +288,243 @@ function setVoiceStatus(message, state = "Idle") {
   }
 }
 
+function setChatStatus(message, state = "Ready") {
+  if (chatStatus) {
+    chatStatus.innerHTML = message;
+    chatStatus.hidden = !message;
+  }
+  scrollChatToLatest();
+}
+
+function scrollChatToLatest() {
+  window.setTimeout(() => {
+    if (chatDialogScroll) {
+      chatDialogScroll.scrollTop = chatDialogScroll.scrollHeight;
+    }
+  }, 30);
+}
+
+function openChatDialog() {
+  chatDialog?.classList.add("open");
+  chatDialog?.setAttribute("aria-hidden", "false");
+  chatLauncher?.setAttribute("aria-expanded", "true");
+  document.body.classList.add("chat-open");
+  window.setTimeout(() => chatQuestion?.focus(), 120);
+}
+
+function closeChatDialog() {
+  chatDialog?.classList.remove("open");
+  chatDialog?.setAttribute("aria-hidden", "true");
+  chatLauncher?.setAttribute("aria-expanded", "false");
+  document.body.classList.remove("chat-open");
+}
+
+function setMobileMenu(open) {
+  workspaceMenu?.classList.toggle("open", open);
+  mobileMenuToggle?.classList.toggle("open", open);
+  mobileMenuToggle?.setAttribute("aria-expanded", String(open));
+  mobileMenuToggle?.setAttribute("aria-label", open ? "Close workspace menu" : "Open workspace menu");
+}
+
+function renderChatAnswer(question, data) {
+  const answerTitle = data.conversation_stage === "asking_followup" ? "Follow-up question" : data.conversation_stage === "summary_ready" ? "Summary and next steps" : "Answer";
+  return [
+    section("Question", `<p>${escapeHtml(question)}</p>`),
+    data.red_flags?.length ? section("Safety alerts", list(data.red_flags.map(escapeHtml))) : "",
+    section(answerTitle, `<p>${escapeHtml(data.answer)}</p>`),
+    data.sources?.length
+      ? section("Source", `<p>${escapeHtml(data.sources.slice(0, 2).map((source) => source.citation || source.title).join(", "))}</p>`)
+      : ""
+  ].join("");
+}
+
+function voiceStageLabel(data) {
+  if (data.red_flags?.length || data.conversation_stage === "urgent") {
+    return "Alert";
+  }
+  if (data.conversation_stage === "asking_followup") {
+    return "Asking follow-up";
+  }
+  if (data.conversation_stage === "summary_ready") {
+    return "Summary ready";
+  }
+  return "Answered";
+}
+
+function renderChatLoading(question) {
+  return [
+    section("Question", `<p>${escapeHtml(question)}</p>`),
+    section("Answer", `<div class="chat-loading"><span></span><span></span><span></span>HealthGuard is checking trusted guidance...</div>`)
+  ].join("");
+}
+
+function renderVisibleChatMessages() {
+  if (!chatHistoryPanel) {
+    return;
+  }
+  chatHistoryPanel.innerHTML = visibleChatMessages.map((message) => `
+    <div class="chat-message ${message.role === "assistant" ? "assistant" : "user"}">
+      <strong>${message.role === "assistant" ? "HealthGuard" : "You"}</strong>
+      <p>${escapeHtml(message.content)}</p>
+    </div>
+  `).join("");
+  scrollChatToLatest();
+}
+
+function appendVisibleChatMessage(role, content) {
+  visibleChatMessages.push({ role, content });
+  renderVisibleChatMessages();
+}
+
+function updateLastVisibleAssistantMessage(content) {
+  const lastAssistantIndex = visibleChatMessages.map((message) => message.role).lastIndexOf("assistant");
+  if (lastAssistantIndex >= 0) {
+    visibleChatMessages[lastAssistantIndex].content = content;
+  } else {
+    visibleChatMessages.push({ role: "assistant", content });
+  }
+  renderVisibleChatMessages();
+}
+
+function renderChatHistory(messages = []) {
+  if (!chatHistoryPanel) {
+    return;
+  }
+  renderVisibleChatMessages();
+  scrollChatToLatest();
+}
+
+function renderChatConversationOptions(conversations = []) {
+  if (!chatConversationSelect) {
+    return;
+  }
+  chatConversationSelect.innerHTML = [
+    `<option value="">New chat</option>`,
+    ...conversations.map((item) => {
+      const title = item.title || `Chat #${item.id}`;
+      const active = item.id === activeChatConversationId ? " selected" : "";
+      return `<option value="${item.id}"${active}>${escapeHtml(title.slice(0, 44))}</option>`;
+    })
+  ].join("");
+}
+
+async function loadChatHistory() {
+  if (!currentUser) {
+    return;
+  }
+  const response = await fetch("/api/chat/conversations", { headers: authHeaders() });
+  const data = await response.json();
+  if (!response.ok) {
+    return;
+  }
+  renderChatConversationOptions(data.items || []);
+  const conversation = activeChatConversationId
+    ? data.items.find((item) => item.id === activeChatConversationId)
+    : data.items[0];
+  if (conversation) {
+    activeChatConversationId = conversation.id;
+    localStorage.setItem(chatConversationStorageKey(), String(conversation.id));
+    renderChatHistory(conversation.messages || []);
+  } else {
+    activeChatConversationId = null;
+    localStorage.removeItem(chatConversationStorageKey());
+    renderChatHistory([]);
+  }
+}
+
+function startNewChatConversation() {
+  activeChatConversationId = null;
+  localStorage.removeItem(chatConversationStorageKey());
+  renderChatHistory([]);
+  renderChatFeedback(null);
+  if (chatConversationSelect) {
+    chatConversationSelect.value = "";
+  }
+  setChatStatus("New chat started. Ask one health question.", "Ready");
+  chatQuestion?.focus();
+}
+
+async function exportActiveChat() {
+  if (!activeChatConversationId) {
+    setChatStatus("No chat selected to export.", "Error");
+    return;
+  }
+  const response = await fetch("/api/chat/export", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ conversation_id: activeChatConversationId, report_id: lastReportId })
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    setChatStatus(formatApiError(response, data, "Chat export failed."), `Error ${response.status}`);
+    return;
+  }
+  const blob = new Blob([data.content], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `healthguard-chat-${data.conversation_id}.txt`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  setChatStatus("Chat exported for doctor review.", "Ready");
+}
+
+async function loadChatStarters() {
+  if (!currentUser || !chatStartersPanel) {
+    return;
+  }
+  const defaultFaqs = [
+    "What should I track for fever?",
+    "When should I see a doctor?",
+    "What should I eat today?"
+  ];
+  const response = await fetch("/api/chat/starter-questions", { headers: authHeaders() });
+  const data = await response.json();
+  if (!response.ok) {
+    chatStartersPanel.innerHTML = defaultFaqs.map((question) => (
+      `<button type="button" data-chat-starter="${encodeURIComponent(question)}">${escapeHtml(question)}</button>`
+    )).join("");
+    return;
+  }
+  const questions = (data.items && data.items.length ? data.items : defaultFaqs).slice(0, 3);
+  chatStartersPanel.innerHTML = questions.map((question) => (
+    `<button type="button" data-chat-starter="${encodeURIComponent(question)}">${escapeHtml(question)}</button>`
+  )).join("");
+}
+
+function renderUrgentChatState(data) {
+  if (!chatUrgentPanel) {
+    return;
+  }
+  const urgent = Boolean(data.emergency_escalation || data.red_flags?.length);
+  chatUrgentPanel.hidden = !urgent;
+  if (urgent && data.red_flags?.length) {
+    chatUrgentPanel.innerHTML = `<strong>Urgent symptom alert</strong>${list(data.red_flags.map(escapeHtml))}<p>Seek emergency care now if symptoms are severe, sudden, or worsening.</p>`;
+  }
+}
+
+function renderChatFeedback(messageId) {
+  lastChatAssistantMessageId = messageId || null;
+  if (chatFeedbackPanel) {
+    chatFeedbackPanel.hidden = !lastChatAssistantMessageId;
+  }
+}
+
+async function sendChatFeedback(rating) {
+  if (!lastChatAssistantMessageId) {
+    return;
+  }
+  const response = await fetch("/api/chat/feedback", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ message_id: lastChatAssistantMessageId, rating })
+  });
+  chatFeedbackPanel.hidden = true;
+  setChatStatus(response.ok ? "Thanks. Your chatbot feedback was saved." : "Feedback could not be saved.", response.ok ? "Ready" : "Error");
+}
+
 function voiceErrorMessage(errorCode) {
   const messages = {
     "not-allowed": "Microphone permission was blocked. Allow microphone access for this site, then try again.",
@@ -261,6 +548,63 @@ async function getMicrophoneStream() {
 async function ensureMicrophoneAccess() {
   const stream = await getMicrophoneStream();
   stream.getTracks().forEach((track) => track.stop());
+}
+
+function clearVoiceTimers() {
+  if (voiceSilenceTimer) {
+    window.clearTimeout(voiceSilenceTimer);
+    voiceSilenceTimer = null;
+  }
+  if (voiceRestartTimer) {
+    window.clearTimeout(voiceRestartTimer);
+    voiceRestartTimer = null;
+  }
+}
+
+function scheduleVoiceSilenceStop() {
+  if (!voiceIsCapturing || voiceFinalizing) {
+    return;
+  }
+  if (voiceSilenceTimer) {
+    window.clearTimeout(voiceSilenceTimer);
+  }
+  voiceSilenceTimer = window.setTimeout(() => {
+    if (!voiceIsCapturing || voiceFinalizing) {
+      return;
+    }
+    voiceFinalizing = true;
+    setVoiceStatus("Processing...", "Processing...");
+    try {
+      voiceRecognition?.stop();
+    } catch {
+      finishBrowserVoiceCapture();
+    }
+  }, voiceSilenceTimeoutMs);
+}
+
+async function finishBrowserVoiceCapture() {
+  clearVoiceTimers();
+  voiceIsCapturing = false;
+  voiceFinalizing = false;
+  if (voiceDiscardCapture) {
+    voiceDiscardCapture = false;
+    voiceRecognition = null;
+    voiceStartButton.disabled = false;
+    voiceStopButton.disabled = true;
+    voiceStartButton.setAttribute("aria-pressed", "false");
+    return;
+  }
+  voiceStartButton.disabled = false;
+  voiceStopButton.disabled = true;
+  voiceStartButton.setAttribute("aria-pressed", "false");
+  voiceRecognition = null;
+  const transcript = voiceTranscript.value.trim();
+  if (!transcript) {
+    setVoiceStatus("No speech captured. Try again or type your question.", "Error");
+    return;
+  }
+  setVoiceStatus("Responding...", "Responding...");
+  await submitVoiceQuestion();
 }
 
 function addSelectedFood() {
@@ -417,6 +761,27 @@ function closeVerificationModal() {
   verificationModal.setAttribute("aria-hidden", "true");
 }
 
+function openPasswordResetModal() {
+  if (!passwordResetModal) {
+    return;
+  }
+  const email = document.querySelector("#login-email").value || document.querySelector("#register-email").value;
+  document.querySelector("#password-reset-email").value = email;
+  passwordResetModal.classList.add("open");
+  passwordResetModal.style.display = "grid";
+  passwordResetModal.setAttribute("aria-hidden", "false");
+  setTimeout(() => document.querySelector("#password-reset-email").focus(), 0);
+}
+
+function closePasswordResetModal() {
+  if (!passwordResetModal) {
+    return;
+  }
+  passwordResetModal.classList.remove("open");
+  passwordResetModal.style.display = "";
+  passwordResetModal.setAttribute("aria-hidden", "true");
+}
+
 function tourStorageKey(user = currentUser) {
   return user?.id ? `healthguardTourSeen:${user.id}` : "healthguardTourSeen:anonymous";
 }
@@ -515,6 +880,8 @@ function setCurrentUser(user, options = {}) {
   currentUser = user;
   if (user) {
     localStorage.setItem("healthguardUser", JSON.stringify(user));
+    activeChatConversationId = Number(localStorage.getItem(chatConversationStorageKey(user)) || "0") || null;
+    activeVoiceConversationId = Number(localStorage.getItem(voiceConversationStorageKey(user)) || "0") || null;
     loadDocumentContextForCurrentUser();
   } else {
     localStorage.removeItem("healthguardUser");
@@ -542,10 +909,10 @@ function renderAuthState() {
   }
   document.body.classList.add("is-authenticated");
   authStatus.textContent = `${currentUser.name} is logged in as ${currentUser.role}.`;
-  homeTitle.textContent = `Welcome, ${currentUser.name}`;
+  homeTitle.textContent = "HealthGuard AI dashboard";
   homeSubtitle.textContent = currentUser.role === "patient"
-    ? "Signed in as patient. Complete the guided assessment, upload optional documents, and review your own saved reports."
-    : `Signed in as ${currentUser.role}. Follow the guided workflow to review saved outputs and use role-specific tools.`;
+    ? `Welcome, ${currentUser.name}. HealthGuard AI is your clinical safety workspace for asking health questions, completing guided symptom and lifestyle assessments, uploading medical documents, and creating doctor-ready educational reports.`
+    : `Welcome, ${currentUser.name}. HealthGuard AI helps ${currentUser.role} users review safe health outputs, support clinical workflows, and manage doctor-ready educational reports.`;
   roleToolsTitle.textContent = `${currentUser.role} actions`;
   knowledgeForm.classList.toggle("visible", currentUser.role === "admin");
   loadHistory({ resetPage: true });
@@ -585,6 +952,23 @@ function renderDocumentStatus() {
     uploadedDocumentContext.doctor_questions?.length ? section("Questions for doctor", list(uploadedDocumentContext.doctor_questions.map(escapeHtml))) : "",
     section("Processing note", `<p>${uploadedDocumentContext.disclaimer}</p>`)
   ].join("");
+}
+
+function renderSourceCitations(sources = []) {
+  const citedSources = sources.filter((source) => source?.excerpt);
+  if (!citedSources.length) {
+    return "";
+  }
+  return section(
+    "Source citations",
+    list(
+      citedSources.slice(0, 6).map((source) => {
+        const label = source.citation ? `[${source.citation}] ` : "";
+        const score = source.similarity_score ? ` · score ${source.similarity_score}` : "";
+        return escapeHtml(`${label}${source.title} (${source.source_type || "source"}${score}): ${source.excerpt}`);
+      })
+    )
+  );
 }
 
 function documentContextKey(user = currentUser) {
@@ -684,7 +1068,7 @@ form.addEventListener("submit", async (event) => {
   riskPill.textContent = `${generated.risk_summary.overall_risk_level} ${generated.risk_summary.risk_score}`;
   riskPill.className = generated.emergency_warning ? "pill urgent" : "pill";
   report.innerHTML = [
-    section("Saved report", `<p>Report #${data.report_id} is saved for doctor review.</p>`),
+    section("Saved report", `<p>Report #${data.report_id} version v${data.report_version || 1} is saved for doctor review.</p>`),
     generated.emergency_warning ? section("Emergency warning", `<p>${generated.precautions[0]}</p>`) : "",
     section("Risk factors", list(generated.risk_summary.key_risk_factors)),
     section("Concerns to discuss with a doctor", list(generated.possible_health_concerns_to_discuss_with_doctor)),
@@ -694,6 +1078,7 @@ form.addEventListener("submit", async (event) => {
     generated.physical_activity_plan?.length ? section("Physical activity plan", list(generated.physical_activity_plan)) : "",
     generated.doctor_department_guidance?.length ? section("Which doctor to consult", list(generated.doctor_department_guidance)) : "",
     generated.llm_summary ? section("AI summary", `<p>${generated.llm_summary}</p>`) : "",
+    renderSourceCitations(generated.sources),
     section("Generation engine", `<p>${generated.generation_engine || "rules"}</p>`),
     generated.llm_error ? section("LLM status", `<p>${generated.llm_error}</p>`) : "",
     section("Questions for doctor", list(generated.suggested_questions_to_ask_doctor)),
@@ -757,15 +1142,19 @@ async function startVoiceInput() {
     setVoiceStatus("Login first to use voice input.", "Error");
     return;
   }
+  const Recognition = getSpeechRecognition();
+  if (Recognition) {
+    await startBrowserVoiceRecognition(Recognition);
+    return;
+  }
   if (window.MediaRecorder) {
     await startServerVoiceRecording();
     return;
   }
-  const Recognition = getSpeechRecognition();
-  if (!Recognition) {
-    setVoiceStatus("Voice recognition is not supported in this browser. Type the transcript in the box and click Ask HealthGuard.", "Error");
-    return;
-  }
+  setVoiceStatus("Voice input is not supported here. Type your question and tap Ask HealthGuard.", "Error");
+}
+
+async function startBrowserVoiceRecognition(Recognition) {
   try {
     await ensureMicrophoneAccess();
   } catch (error) {
@@ -774,18 +1163,23 @@ async function startVoiceInput() {
   }
   window.speechSynthesis?.cancel();
   stopVoiceInput();
+  clearVoiceTimers();
   voiceFinalTranscript = "";
   voiceManualStop = false;
+  voiceDiscardCapture = false;
+  voiceIsCapturing = true;
+  voiceFinalizing = false;
   voiceRecognition = new Recognition();
   voiceRecognition.lang = "en-IN";
   voiceRecognition.interimResults = true;
-  voiceRecognition.continuous = false;
+  voiceRecognition.continuous = true;
   voiceRecognition.maxAlternatives = 1;
   voiceRecognition.onstart = () => {
     voiceStartButton.disabled = true;
     voiceStopButton.disabled = false;
     voiceStartButton.setAttribute("aria-pressed", "true");
-    setVoiceStatus("Listening. Speak your symptoms, lifestyle details, or report question.", "Listening");
+    setVoiceStatus("Listening...", "Listening...");
+    scheduleVoiceSilenceStop();
   };
   voiceRecognition.onresult = (event) => {
     let interim = "";
@@ -799,41 +1193,80 @@ async function startVoiceInput() {
     }
     const combined = `${voiceFinalTranscript}${interim}`.trim();
     voiceTranscript.value = combined;
-    extractVoiceIntake(combined);
+    if (combined) {
+      setVoiceStatus("Listening...", "Listening...");
+      scheduleVoiceSilenceStop();
+    }
   };
   voiceRecognition.onerror = (event) => {
-    setVoiceStatus(`${voiceErrorMessage(event.error)} You can still type the transcript and submit it.`, "Error");
-  };
-  voiceRecognition.onend = () => {
+    if (event.error === "no-speech" && voiceTranscript.value.trim()) {
+      scheduleVoiceSilenceStop();
+      return;
+    }
+    clearVoiceTimers();
+    voiceIsCapturing = false;
+    voiceFinalizing = false;
+    voiceRecognition = null;
     voiceStartButton.disabled = false;
     voiceStopButton.disabled = true;
     voiceStartButton.setAttribute("aria-pressed", "false");
-    if (voicePill?.textContent === "Listening" && voiceTranscript.value.trim()) {
-      setVoiceStatus("Voice capture stopped. Review the transcript, then ask HealthGuard.", "Ready");
-    } else if (voicePill?.textContent === "Listening" && !voiceManualStop) {
-      setVoiceStatus("Listening ended without a transcript. Check microphone permission and try again, or type manually.", "Error");
+    setVoiceStatus(`${voiceErrorMessage(event.error)} You can still type the transcript and submit it.`, "Error");
+  };
+  voiceRecognition.onend = async () => {
+    if (voiceFinalizing || voiceManualStop) {
+      await finishBrowserVoiceCapture();
+      return;
+    }
+    if (voiceIsCapturing) {
+      voiceRestartTimer = window.setTimeout(() => {
+        try {
+          voiceRecognition?.start();
+        } catch {
+          voiceFinalizing = true;
+          finishBrowserVoiceCapture();
+        }
+      }, 250);
+      return;
     }
     voiceRecognition = null;
+    voiceStartButton.disabled = false;
+    voiceStopButton.disabled = true;
+    voiceStartButton.setAttribute("aria-pressed", "false");
   };
   try {
     voiceRecognition.start();
   } catch (error) {
-    setVoiceStatus(`${escapeHtml(error.message || "Voice recognition could not start.")} Try again or type the transcript manually.`, "Error");
+    setVoiceStatus(`${escapeHtml(error.message || "Voice recognition could not start.")} Trying server transcription instead...`, "Error");
+    clearVoiceTimers();
+    voiceIsCapturing = false;
+    voiceFinalizing = false;
     voiceRecognition = null;
     voiceStartButton.disabled = false;
     voiceStopButton.disabled = true;
     voiceStartButton.setAttribute("aria-pressed", "false");
+    if (window.MediaRecorder) {
+      await startServerVoiceRecording();
+    }
   }
 }
 
-function stopVoiceInput() {
+function stopVoiceInput(options = {}) {
+  voiceDiscardCapture = Boolean(options.discard);
   if (voiceMediaRecorder && voiceMediaRecorder.state === "recording") {
     voiceManualStop = true;
+    if (!voiceDiscardCapture) {
+      setVoiceStatus("Processing...", "Processing...");
+    }
     voiceMediaRecorder.stop();
     return;
   }
   if (voiceRecognition) {
     voiceManualStop = true;
+    voiceFinalizing = !voiceDiscardCapture;
+    clearVoiceTimers();
+    if (!voiceDiscardCapture) {
+      setVoiceStatus("Processing...", "Processing...");
+    }
     voiceRecognition.stop();
   }
 }
@@ -841,6 +1274,7 @@ function stopVoiceInput() {
 async function startServerVoiceRecording() {
   stopVoiceInput();
   stopVoiceTracks();
+  clearVoiceTimers();
   try {
     voiceAudioStream = await getMicrophoneStream();
   } catch (error) {
@@ -850,6 +1284,9 @@ async function startServerVoiceRecording() {
   window.speechSynthesis?.cancel();
   voiceAudioChunks = [];
   voiceManualStop = false;
+  voiceDiscardCapture = false;
+  voiceIsCapturing = true;
+  voiceFinalizing = false;
   const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
     ? "audio/webm;codecs=opus"
     : MediaRecorder.isTypeSupported("audio/webm")
@@ -873,6 +1310,12 @@ async function startServerVoiceRecording() {
     const blob = new Blob(voiceAudioChunks, { type: voiceMediaRecorder?.mimeType || "audio/webm" });
     const durationMs = Date.now() - voiceRecordingStartedAt;
     voiceMediaRecorder = null;
+    voiceIsCapturing = false;
+    voiceFinalizing = false;
+    if (voiceDiscardCapture) {
+      voiceDiscardCapture = false;
+      return;
+    }
     if (!blob.size || durationMs < 1500) {
       setVoiceStatus("Recording was too short. Hold the mic for at least two seconds, speak clearly, then press Stop.", "Error");
       return;
@@ -884,7 +1327,7 @@ async function startServerVoiceRecording() {
   voiceStartButton.disabled = true;
   voiceStopButton.disabled = false;
   voiceStartButton.setAttribute("aria-pressed", "true");
-  setVoiceStatus("Recording locally. Speak for at least two seconds, then press Stop. Audio will be transcribed by Hugging Face.", "Recording");
+  setVoiceStatus("Listening...", "Listening...");
 }
 
 function stopVoiceTracks() {
@@ -895,7 +1338,7 @@ function stopVoiceTracks() {
 }
 
 async function transcribeRecordedVoice(blob) {
-  setVoiceStatus("Transcribing your recording with Hugging Face speech recognition...", "Transcribing");
+  setVoiceStatus("Processing...", "Processing...");
   const body = new FormData();
   body.append("audio", blob, "voice-input.webm");
   const response = await fetch("/api/voice/transcribe", {
@@ -905,13 +1348,142 @@ async function transcribeRecordedVoice(blob) {
   });
   const data = await response.json();
   if (!response.ok) {
-    setVoiceStatus(`${formatApiError(response, data, "Voice transcription failed.")} Type the transcript manually if needed.`, `Error ${response.status}`);
+    setVoiceStatus("Voice transcription is temporarily unavailable. Type your question in the transcript box and tap Ask HealthGuard.", `Error ${response.status}`);
     return;
   }
   voiceTranscript.value = data.transcript;
-  extractVoiceIntake(data.transcript);
-  setVoiceStatus(`Transcript captured with ${escapeHtml(data.model)}. Generating HealthGuard answer...`, "Transcript ready");
+  setVoiceStatus("Responding...", "Responding...");
   await submitVoiceQuestion();
+}
+
+async function submitChatQuestion() {
+  if (!currentUser) {
+    setChatStatus("Login first to ask HealthGuard.", "Error");
+    return;
+  }
+  const question = chatQuestion?.value.trim() || "";
+  if (!question) {
+    setChatStatus("Type a health question before submitting.", "Error");
+    chatQuestion?.focus();
+    return;
+  }
+  if (!document.querySelector("#consent").checked) {
+    setChatStatus("Consent is required before processing health information.", "Error");
+    return;
+  }
+  if (chatSubmitButton) {
+    chatSubmitButton.disabled = true;
+  }
+  if (chatQuestion) {
+    chatQuestion.value = "";
+  }
+  appendVisibleChatMessage("user", question);
+  appendVisibleChatMessage("assistant", "HealthGuard is checking trusted guidance...");
+  setChatStatus("", "Working");
+  const payload = {
+    question: uploadedDocumentContext?.tuned_context
+      ? `${question}\n\nUploaded document context:\n${uploadedDocumentContext.tuned_context}`
+      : question,
+    profile: optionalVoiceProfile(),
+    consent_to_process_health_data: true,
+    conversation_id: activeChatConversationId,
+    report_id: lastReportId
+  };
+  try {
+    renderChatFeedback(null);
+    if (chatUrgentPanel) {
+      chatUrgentPanel.hidden = true;
+    }
+    const response = await fetch("/api/chat/health-question/stream", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) {
+      const data = await response.json();
+      updateLastVisibleAssistantMessage("Chatbot failed. Please try again.");
+      setChatStatus(formatApiError(response, data, "Chatbot failed."), `Error ${response.status}`);
+      return;
+    }
+    if (!response.body) {
+      const data = await response.json();
+      activeChatConversationId = data.conversation_id || activeChatConversationId;
+      localStorage.setItem(chatConversationStorageKey(), String(activeChatConversationId));
+      renderUrgentChatState(data);
+      updateLastVisibleAssistantMessage(data.answer);
+      setChatStatus("", data.red_flags?.length ? "Alert" : "Answered");
+      renderChatFeedback(data.assistant_message_id);
+      return;
+    }
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let streamedAnswer = "";
+    setChatStatus("", "Working");
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        break;
+      }
+      buffer += decoder.decode(value, { stream: true });
+      const chunks = buffer.split("\n\n");
+      buffer = chunks.pop() || "";
+      for (const chunk of chunks) {
+        const line = chunk.split("\n").find((item) => item.startsWith("data: "));
+        if (!line) {
+          continue;
+        }
+        const event = JSON.parse(line.slice(6));
+        if (event.type === "token") {
+          streamedAnswer += event.text;
+          updateLastVisibleAssistantMessage(streamedAnswer.trim() || "HealthGuard is checking trusted guidance...");
+        }
+        if (event.type === "done") {
+          const data = event.payload;
+          activeChatConversationId = data.conversation_id || activeChatConversationId;
+          localStorage.setItem(chatConversationStorageKey(), String(activeChatConversationId));
+          renderUrgentChatState(data);
+          updateLastVisibleAssistantMessage(data.answer);
+          setChatStatus("", data.red_flags?.length ? "Alert" : "Answered");
+          renderChatFeedback(data.assistant_message_id);
+        }
+      }
+    }
+  } catch (error) {
+    updateLastVisibleAssistantMessage("Chatbot request failed. Please try again.");
+    setChatStatus(`Chatbot request failed: ${escapeHtml(error.message || "network error")}.`, "Error");
+  } finally {
+    if (chatSubmitButton) {
+      chatSubmitButton.disabled = false;
+    }
+  }
+}
+
+function copyAssessmentQuestionToChat() {
+  const assessmentQuestion = document.querySelector("#question").value.trim();
+  if (!assessmentQuestion) {
+    setChatStatus("The assessment question is empty. Type a question here or fill the assessment field first.", "Error");
+    return;
+  }
+  chatQuestion.value = assessmentQuestion;
+  chatQuestion.focus();
+  setChatStatus("Assessment question copied. You can edit it before asking the chatbot.", "Ready");
+}
+
+function clearChatAssistant() {
+  if (chatQuestion) {
+    chatQuestion.value = "";
+  }
+  visibleChatMessages = [];
+  if (chatHistoryPanel) {
+    chatHistoryPanel.innerHTML = "";
+  }
+  if (chatUrgentPanel) {
+    chatUrgentPanel.hidden = true;
+  }
+  renderChatFeedback(null);
+  setChatStatus("Cleared. Type a health question below.", "Ready");
+  chatQuestion?.focus();
 }
 
 async function submitVoiceQuestion() {
@@ -928,15 +1500,15 @@ async function submitVoiceQuestion() {
     setVoiceStatus("Consent is required before processing health information.", "Error");
     return;
   }
-  extractVoiceIntake(transcript);
-  setVoiceStatus("Processing your voice input with safety checks and supporting knowledge...", "Working");
+  setVoiceStatus("Responding...", "Responding...");
   const payload = {
-    question: uploadedDocumentContext?.tuned_context
-      ? `${transcript}\n\nUploaded document context:\n${uploadedDocumentContext.tuned_context}`
-      : transcript,
-    profile: optionalVoiceProfile(),
-    consent_to_process_health_data: true
+    question: transcript,
+    consent_to_process_health_data: true,
+    conversation_id: activeVoiceConversationId,
+    voice_mode: true,
+    source: "voice"
   };
+  voiceTranscript.value = "";
   const response = await fetch("/api/chat/health-question", {
     method: "POST",
     headers: { "Content-Type": "application/json", ...authHeaders() },
@@ -949,19 +1521,15 @@ async function submitVoiceQuestion() {
     setVoiceStatus(formatApiError(response, data, "Voice assistant failed."), `Error ${response.status}`);
     return;
   }
+  activeVoiceConversationId = data.conversation_id || activeVoiceConversationId;
+  if (activeVoiceConversationId) {
+    localStorage.setItem(voiceConversationStorageKey(), String(activeVoiceConversationId));
+  }
   lastVoiceAnswer = data.answer;
   voiceReadButton.disabled = false;
   setVoiceStatus(
-    [
-      section("Transcript", `<p>${escapeHtml(transcript)}</p>`),
-      data.red_flags?.length ? section("Safety alerts", list(data.red_flags.map(escapeHtml))) : "",
-      section("Answer", `<p>${escapeHtml(data.answer)}</p>`),
-      data.sources?.length
-        ? section("Supporting knowledge", list(data.sources.slice(0, 3).map((source) => escapeHtml(`${source.title}: ${source.excerpt}`))))
-        : "",
-      section("Disclaimer", `<p>${escapeHtml(data.disclaimer)}</p>`)
-    ].join(""),
-    data.red_flags?.length ? "Alert" : "Answered"
+    renderChatAnswer(transcript, data).replace("<h3>Question</h3>", "<h3>Transcript</h3>"),
+    voiceStageLabel(data)
   );
   speakVoiceAnswer();
 }
@@ -980,7 +1548,11 @@ function speakVoiceAnswer() {
 }
 
 function clearVoiceAssistant() {
-  stopVoiceInput();
+  stopVoiceInput({ discard: true });
+  clearVoiceTimers();
+  voiceIsCapturing = false;
+  voiceFinalizing = false;
+  voiceDiscardCapture = false;
   window.speechSynthesis?.cancel();
   voiceTranscript.value = "";
   voiceFinalTranscript = "";
@@ -1011,6 +1583,7 @@ async function loadHistory(options = {}) {
   }
   const response = await fetch("/api/reports", { headers: authHeaders() });
   const data = await response.json();
+  await loadNotifications();
   if (!response.ok) {
     savedReports = [];
     historyPanel.textContent = formatApiError(response, data, "Unable to load reports.");
@@ -1028,6 +1601,39 @@ async function loadHistory(options = {}) {
   }
   savedReportsPage = Math.min(savedReportsPage, Math.ceil(savedReports.length / savedReportsPageSize)) || 1;
   renderSavedReports();
+}
+
+async function loadNotifications() {
+  patientNotifications = [];
+  if (!currentUser) {
+    return;
+  }
+  const response = await fetch("/api/notifications", { headers: authHeaders() });
+  if (!response.ok) {
+    return;
+  }
+  const data = await response.json();
+  patientNotifications = data.items || [];
+}
+
+function renderNotifications() {
+  if (!patientNotifications.length) {
+    return "";
+  }
+  const items = patientNotifications
+    .slice(0, 5)
+    .map(
+      (item) => `<div class="notification-item ${item.status === "unread" ? "unread" : ""}">
+        <div>
+          <strong>${escapeHtml(item.title)}</strong>
+          <p>${escapeHtml(item.message)}</p>
+          <small>${escapeHtml(item.created_at)}</small>
+        </div>
+        ${item.status === "unread" ? `<button class="secondary" type="button" data-read-notification="${item.id}">Mark read</button>` : ""}
+      </div>`
+    )
+    .join("");
+  return section("Patient notifications", items);
 }
 
 function renderSavedReports() {
@@ -1051,7 +1657,8 @@ function renderSavedReports() {
           ${item.patient_summary.occupation || "Unknown occupation"} -
           ${item.risk_level} ${item.risk_score}
           <br />
-          Review: ${item.doctor_review_status}
+          Review: ${item.doctor_review_status} · Version v${item.current_version || 1}
+          ${(item.version_history || []).length ? `<br /><small>${item.version_history.length} version event(s) recorded</small>` : ""}
         </div>
         <div class="actions">
           <a class="button-link" href="/api/reports/${item.id}/download?demo_token=${encodeURIComponent(currentUser.demo_token)}">PDF</a>
@@ -1072,14 +1679,20 @@ function renderSavedReports() {
   const privacyNote = currentUser?.role === "patient"
     ? `<p class="privacy-note">Showing reports saved for ${escapeHtml(currentUser.name)} only.</p>`
     : `<p class="privacy-note">Showing reports owned by this logged-in account only. Use Role tools for patient review queues.</p>`;
-  historyPanel.innerHTML = `${privacyNote}${reportList}${pager}`;
+  historyPanel.innerHTML = `${renderNotifications()}${privacyNote}${reportList}${pager}`;
 }
 
 function renderPatientReportFolders(folders = []) {
+  const controls = `<div class="doctor-filter-bar">
+    <button class="secondary ${doctorQueueStatus === "pending" ? "active-filter" : ""}" type="button" data-doctor-filter="pending">Pending</button>
+    <button class="secondary ${doctorQueueStatus === "reviewed" ? "active-filter" : ""}" type="button" data-doctor-filter="reviewed">Reviewed</button>
+    <button class="secondary ${doctorQueueStatus === "urgent" ? "active-filter" : ""}" type="button" data-doctor-filter="urgent">Urgent</button>
+    <button class="secondary ${doctorQueueStatus === "all" ? "active-filter" : ""}" type="button" data-doctor-filter="all">All</button>
+  </div>`;
   if (!folders.length) {
-    return section("Patient folders", "<p>No pending patient reports.</p>");
+    return `${controls}${section("Patient folders", "<p>No patient reports match this filter.</p>")}`;
   }
-  return folders
+  return controls + folders
     .map((folder) => {
       const summary = folder.patient_summary || {};
       const title = [
@@ -1096,7 +1709,7 @@ function renderPatientReportFolders(folders = []) {
             <div>
               <strong>#${item.id}</strong> ${item.risk_level} ${item.risk_score}
               <br />
-              Review: ${item.doctor_review_status}
+              Review: ${item.doctor_review_status} · Version v${item.current_version || 1}
               <div class="patient-problem">
                 <span>Patient problem</span>
                 <p>${escapeHtml(item.problem_summary || "Review generated report.")}</p>
@@ -1107,7 +1720,32 @@ function renderPatientReportFolders(folders = []) {
             </div>
             <div class="actions">
               <a class="button-link" href="/api/reports/${item.id}/download?demo_token=${encodeURIComponent(currentUser.demo_token)}">PDF</a>
-              <button class="secondary" type="button" onclick="approveReport(${item.id})">Approve</button>
+              <button class="secondary" type="button" onclick="assignReport(${item.id})">Assign</button>
+            </div>
+            <div class="doctor-review-controls">
+              <label>
+                Priority
+                <select id="priority-${item.id}">
+                  <option value="routine" ${item.review_priority === "routine" ? "selected" : ""}>Routine</option>
+                  <option value="priority" ${item.review_priority === "priority" ? "selected" : ""}>Priority</option>
+                  <option value="urgent" ${item.review_priority === "urgent" ? "selected" : ""}>Urgent</option>
+                </select>
+              </label>
+              <label>
+                Status
+                <select id="status-${item.id}">
+                  ${["submitted", "assigned", "in_review", "needs_patient_followup", "reviewed", "approved", "escalated", "closed"].map((status) => `<option value="${status}" ${item.doctor_review_status === status ? "selected" : ""}>${status.replaceAll("_", " ")}</option>`).join("")}
+                </select>
+              </label>
+              <label>
+                Comments
+                <input id="comments-${item.id}" placeholder="Doctor comments for patient" value="${escapeHtml(item.doctor_comments || "")}" />
+              </label>
+              <label>
+                Signature
+                <input id="signature-${item.id}" placeholder="Clinician signature" value="${escapeHtml(item.clinician_signature || currentUser.name || "")}" />
+              </label>
+              <button type="button" onclick="submitDoctorReview(${item.id})">Update review</button>
             </div>
           </div>`;
           }
@@ -1116,6 +1754,46 @@ function renderPatientReportFolders(folders = []) {
       return section(title, `<p>${folder.pending_count} pending of ${folder.total_count} report(s).</p>${reports}`);
     })
     .join("");
+}
+
+async function assignReport(reportId) {
+  if (!currentUser || !["doctor", "dietician"].includes(currentUser.role)) {
+    roleOutput.textContent = "Login as a doctor or dietician to assign reports.";
+    return;
+  }
+  const priority = document.querySelector(`#priority-${reportId}`)?.value || "routine";
+  const response = await fetch(`/api/doctor/reports/${reportId}/assign`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ reviewer_id: currentUser.id, priority })
+  });
+  const data = await response.json();
+  roleOutput.innerHTML = response.ok
+    ? `${section("Assignment updated", `<p>Report #${data.id} assigned to ${currentUser.name} with ${priority} priority.</p>`)}${await loadDoctorQueue({ returnHtml: true })}`
+    : formatApiError(response, data, "Unable to assign report.");
+}
+
+async function submitDoctorReview(reportId) {
+  if (!currentUser || !["doctor", "dietician"].includes(currentUser.role)) {
+    roleOutput.textContent = "Login as a doctor or dietician to review reports.";
+    return;
+  }
+  const payload = {
+    status: document.querySelector(`#status-${reportId}`)?.value || "in_review",
+    comments: document.querySelector(`#comments-${reportId}`)?.value || null,
+    final_clinical_notes: document.querySelector(`#comments-${reportId}`)?.value || null,
+    clinician_signature: document.querySelector(`#signature-${reportId}`)?.value || currentUser.name,
+    review_priority: document.querySelector(`#priority-${reportId}`)?.value || "routine"
+  };
+  const response = await fetch(`/api/doctor/reports/${reportId}/review`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify(payload)
+  });
+  const data = await response.json();
+  roleOutput.innerHTML = response.ok
+    ? `${section("Review updated", `<p>Report #${data.id} status changed to ${data.doctor_review_status}. Patient notification was created.</p>`)}${await loadDoctorQueue({ returnHtml: true })}`
+    : formatApiError(response, data, "Unable to update review.");
 }
 
 async function approveReport(reportId) {
@@ -1196,13 +1874,55 @@ loginForm.addEventListener("submit", async (event) => {
   setCurrentUser(data, { showTour: true });
 });
 
-logoutButton.addEventListener("click", () => {
+async function logoutCurrentUser() {
+  if (currentUser?.demo_token) {
+    await fetch("/api/auth/logout", { method: "POST", headers: authHeaders() }).catch(() => null);
+  }
   closeTour(false);
+  activeChatConversationId = null;
+  activeVoiceConversationId = null;
+  lastChatAssistantMessageId = null;
+  localStorage.removeItem(chatConversationStorageKey(currentUser));
+  localStorage.removeItem(voiceConversationStorageKey(currentUser));
+  closeChatDialog();
   setCurrentUser(null);
-});
-homeLogoutButton.addEventListener("click", () => {
-  closeTour(false);
-  setCurrentUser(null);
+}
+
+async function requestPasswordReset() {
+  const email = document.querySelector("#password-reset-email").value || document.querySelector("#login-email").value;
+  const response = await fetch("/api/auth/password-reset/request", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email })
+  });
+  const data = await response.json();
+  authStatus.textContent = response.ok ? data.message : formatApiError(response, data, "Password reset request failed.");
+}
+
+async function confirmPasswordReset() {
+  const response = await fetch("/api/auth/password-reset/confirm", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: document.querySelector("#password-reset-email").value,
+      token: document.querySelector("#password-reset-token").value,
+      new_password: document.querySelector("#password-reset-new-password").value
+    })
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    authStatus.textContent = formatApiError(response, data, "Password reset failed.");
+    return;
+  }
+  closePasswordResetModal();
+  authStatus.textContent = data.message;
+}
+
+logoutButton.addEventListener("click", logoutCurrentUser);
+homeLogoutButton.addEventListener("click", logoutCurrentUser);
+menuLogoutButton?.addEventListener("click", logoutCurrentUser);
+mobileMenuToggle?.addEventListener("click", () => {
+  setMobileMenu(!workspaceMenu?.classList.contains("open"));
 });
 loadRoleData.addEventListener("click", loadRoleActions);
 documentForm?.addEventListener("submit", uploadDocument);
@@ -1214,12 +1934,69 @@ voiceStopButton?.addEventListener("click", stopVoiceInput);
 voiceSubmitButton?.addEventListener("click", submitVoiceQuestion);
 voiceReadButton?.addEventListener("click", speakVoiceAnswer);
 voiceClearButton?.addEventListener("click", clearVoiceAssistant);
+chatSubmitButton?.addEventListener("click", submitChatQuestion);
+chatCopyAssessmentButton?.addEventListener("click", copyAssessmentQuestionToChat);
+chatClearButton?.addEventListener("click", clearChatAssistant);
+chatLauncher?.addEventListener("click", openChatDialog);
+chatCloseButton?.addEventListener("click", closeChatDialog);
+chatNewButton?.addEventListener("click", startNewChatConversation);
+chatExportButton?.addEventListener("click", exportActiveChat);
+chatConversationSelect?.addEventListener("change", async () => {
+  const selected = Number(chatConversationSelect.value || "0") || null;
+  activeChatConversationId = selected;
+  if (selected) {
+    localStorage.setItem(chatConversationStorageKey(), String(selected));
+  } else {
+    localStorage.removeItem(chatConversationStorageKey());
+    renderChatHistory([]);
+    setChatStatus("New chat started. Ask one health question.", "Ready");
+    return;
+  }
+  await loadChatHistory();
+});
+chatStartersPanel?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-chat-starter]");
+  if (!button) {
+    return;
+  }
+  chatQuestion.value = decodeURIComponent(button.dataset.chatStarter);
+  chatQuestion.focus();
+});
+chatFeedbackPanel?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-chat-feedback]");
+  if (!button) {
+    return;
+  }
+  sendChatFeedback(button.dataset.chatFeedback);
+});
+chatQuestion?.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && !event.shiftKey) {
+    event.preventDefault();
+    submitChatQuestion();
+  }
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && chatDialog?.classList.contains("open")) {
+    closeChatDialog();
+  }
+  if (event.key === "Escape" && workspaceMenu?.classList.contains("open")) {
+    setMobileMenu(false);
+  }
+});
 verifyEmailButton.addEventListener("click", verifyEmail);
 loadConfirmationEmailButton?.addEventListener("click", loadLatestConfirmationEmail);
 resendConfirmationButton.addEventListener("click", resendConfirmation);
 closeVerificationModalButton?.addEventListener("click", closeVerificationModal);
 verificationModal?.querySelector(".modal-backdrop")?.addEventListener("click", closeVerificationModal);
-openTourButton?.addEventListener("click", () => openTour({ stepIndex: 0 }));
+requestPasswordResetButton?.addEventListener("click", openPasswordResetModal);
+closePasswordResetModalButton?.addEventListener("click", closePasswordResetModal);
+passwordResetModal?.querySelector(".modal-backdrop")?.addEventListener("click", closePasswordResetModal);
+sendPasswordResetButton?.addEventListener("click", requestPasswordReset);
+confirmPasswordResetButton?.addEventListener("click", confirmPasswordReset);
+openTourButton?.addEventListener("click", () => {
+  setMobileMenu(false);
+  openTour({ stepIndex: 0 });
+});
 closeTourButton?.addEventListener("click", () => closeTour(true));
 tourModal?.querySelector(".modal-backdrop")?.addEventListener("click", () => closeTour(true));
 tourNextButton?.addEventListener("click", nextTourStep);
@@ -1242,6 +2019,13 @@ document.addEventListener("click", (event) => {
       reportsPanel.hidden = false;
     }
     document.querySelector(`#${scrollTarget.dataset.scrollTarget}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setMobileMenu(false);
+  } else if (
+    workspaceMenu?.classList.contains("open")
+    && !event.target.closest("#workspace-menu")
+    && !event.target.closest("#mobile-menu-toggle")
+  ) {
+    setMobileMenu(false);
   }
   const historyPageButton = event.target.closest("[data-history-page]");
   if (historyPageButton) {
@@ -1253,6 +2037,18 @@ document.addEventListener("click", (event) => {
       savedReportsPage = Math.min(totalPages, savedReportsPage + 1);
     }
     renderSavedReports();
+  }
+  const doctorFilter = event.target.closest("[data-doctor-filter]");
+  if (doctorFilter) {
+    doctorQueueStatus = doctorFilter.dataset.doctorFilter;
+    loadDoctorQueue();
+  }
+  const readNotification = event.target.closest("[data-read-notification]");
+  if (readNotification) {
+    fetch(`/api/notifications/${readNotification.dataset.readNotification}/read`, {
+      method: "POST",
+      headers: authHeaders()
+    }).then(() => loadHistory({ resetPage: false }));
   }
   const removeFood = event.target.closest("[data-remove-food]");
   if (removeFood) {
@@ -1276,12 +2072,14 @@ knowledgeForm.addEventListener("submit", async (event) => {
     headers: { "Content-Type": "application/json", ...authHeaders() },
     body: JSON.stringify({
       title: document.querySelector("#knowledge-title").value,
+      category: document.querySelector("#knowledge-category").value || "General",
+      citation: document.querySelector("#knowledge-citation").value || null,
       content: document.querySelector("#knowledge-content").value
     })
   });
   const data = await response.json();
   roleOutput.textContent = response.ok
-    ? `Knowledge #${data.id} added and approved.`
+    ? `Knowledge #${data.id} added in ${data.category} and approved.`
     : formatApiError(response, data, "Unable to add knowledge.");
 });
 
@@ -1291,11 +2089,7 @@ async function loadRoleActions() {
     return;
   }
   if (["doctor", "dietician"].includes(currentUser.role)) {
-    const response = await fetch("/api/doctor/reports/pending", { headers: authHeaders() });
-    const data = await response.json();
-    roleOutput.innerHTML = response.ok
-      ? renderPatientReportFolders(data.patient_folders)
-      : formatApiError(response, data, "Unable to load pending reports.");
+    await loadDoctorQueue();
     return;
   }
   if (["admin", "compliance"].includes(currentUser.role)) {
@@ -1307,6 +2101,28 @@ async function loadRoleActions() {
     return;
   }
   roleOutput.textContent = "Patient users can create profiles, generate reports, ask questions, and download reports.";
+}
+
+async function loadDoctorQueue(options = {}) {
+  const response = await fetch(`/api/doctor/reports/queue?status=${encodeURIComponent(doctorQueueStatus)}`, { headers: authHeaders() });
+  const data = await response.json();
+  const html = response.ok
+    ? `${renderDoctorQueueCounts(data.counts)}${renderPatientReportFolders(data.patient_folders)}`
+    : formatApiError(response, data, "Unable to load doctor queue.");
+  if (options.returnHtml) {
+    return html;
+  }
+  roleOutput.innerHTML = html;
+  return html;
+}
+
+function renderDoctorQueueCounts(counts = {}) {
+  return `<div class="doctor-queue-counts">
+    <span>All ${counts.all || 0}</span>
+    <span>Pending ${counts.pending || 0}</span>
+    <span>Reviewed ${counts.reviewed || 0}</span>
+    <span>Urgent ${counts.urgent || 0}</span>
+  </div>`;
 }
 
 async function restoreSession() {

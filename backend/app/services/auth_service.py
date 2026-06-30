@@ -1,15 +1,18 @@
+import base64
 import hashlib
+import hmac
 import json
 import os
 import secrets
 import urllib.error
 import urllib.parse
 import urllib.request
+from datetime import UTC, datetime, timedelta
 from urllib.parse import urlencode
 
 from backend.app.core.env import load_dotenv
 from backend.app.db.store import connect, init_db, json_dumps, json_loads, now_iso, row_to_dict
-from backend.app.schemas.health import LoginRequest, RegisterRequest
+from backend.app.schemas.health import LoginRequest, PasswordResetConfirmRequest, PasswordResetRequest, RegisterRequest
 from backend.app.services.email_service import EmailService
 
 
@@ -112,13 +115,65 @@ class AuthService:
             conn.execute("DELETE FROM email_outbox WHERE recipient = ?", (email,))
 
     def login(self, request: LoginRequest) -> dict | None:
+        email = request.email.lower()
         with connect() as conn:
-            row = conn.execute("SELECT * FROM users WHERE email = ?", (request.email.lower(),)).fetchone()
-        if not row or row["password_hash"] != self._hash_password(request.password):
+            row = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+        if not row:
+            return None
+        if self._is_locked(row):
+            raise PermissionError(f"Account is temporarily locked until {row['locked_until']}. Use password reset or try later.")
+        if not self._verify_password(request.password, row["password_hash"]):
+            self._record_failed_login(row)
             return None
         if not row["email_verified"]:
             raise PermissionError("Please confirm your email before logging in.")
+        self._clear_failed_logins(row["id"])
         return self._public_user(row["id"])
+
+    def request_password_reset(self, request: PasswordResetRequest) -> dict:
+        email = request.email.lower()
+        token = secrets.token_urlsafe(32)
+        expires_at = self._dt_to_iso(self._utcnow() + timedelta(minutes=self._password_reset_minutes()))
+        with connect() as conn:
+            row = conn.execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone()
+            if row:
+                conn.execute(
+                    """
+                    UPDATE users
+                    SET password_reset_token = ?, password_reset_expires_at = ?
+                    WHERE id = ?
+                    """,
+                    (self._token_digest(token), expires_at, row["id"]),
+                )
+        if row:
+            EmailService().send_password_reset(email, token)
+        return {
+            "message": "If this email exists, a password reset token has been sent.",
+            "expires_in_minutes": self._password_reset_minutes(),
+        }
+
+    def confirm_password_reset(self, request: PasswordResetConfirmRequest) -> dict:
+        email = request.email.lower()
+        now = self._utcnow()
+        with connect() as conn:
+            row = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+            if not row:
+                return {"message": "Password reset completed if the token was valid."}
+            token_ok = row.get("password_reset_token") and secrets.compare_digest(row["password_reset_token"], self._token_digest(request.token))
+            expires_ok = row.get("password_reset_expires_at") and self._parse_iso(row["password_reset_expires_at"]) > now
+            if not token_ok or not expires_ok:
+                raise PermissionError("Invalid or expired password reset token.")
+            conn.execute(
+                """
+                UPDATE users
+                SET password_hash = ?, password_reset_token = NULL, password_reset_expires_at = NULL,
+                    failed_login_count = 0, locked_until = NULL, password_changed_at = ?
+                WHERE id = ?
+                """,
+                (self._hash_password(request.new_password), now_iso(), row["id"]),
+            )
+            conn.execute("UPDATE sessions SET revoked_at = ? WHERE user_id = ?", (now_iso(), row["id"]))
+        return {"message": "Password reset successful. Login with your new password."}
 
     def verify_email(self, code: str, email: str | None = None) -> dict | None:
         with connect() as conn:
@@ -167,10 +222,17 @@ class AuthService:
         allowed = {"google", "facebook", "instagram"}
         if provider not in allowed:
             raise ValueError("Supported SSO providers are google, facebook, and instagram.")
+        if provider in {"facebook", "instagram"}:
+            return {
+                "provider": provider,
+                "configured": False,
+                "disabled": True,
+                "message": f"{provider.title()} SSO is disabled until a production OAuth app and provider review are configured.",
+            }
         client_id = os.getenv(f"{provider.upper()}_CLIENT_ID")
         client_secret = os.getenv(f"{provider.upper()}_CLIENT_SECRET")
         redirect_uri = os.getenv(f"{provider.upper()}_REDIRECT_URI", f"http://127.0.0.1:8001/api/auth/sso/{provider}/callback")
-        if not client_id or (provider == "google" and not client_secret):
+        if not client_id or not client_secret or not redirect_uri:
             return {
                 "provider": provider,
                 "configured": False,
@@ -180,16 +242,8 @@ class AuthService:
                 ),
                 "redirect_uri": redirect_uri,
             }
-        auth_base = {
-            "google": "https://accounts.google.com/o/oauth2/v2/auth",
-            "facebook": "https://www.facebook.com/v19.0/dialog/oauth",
-            "instagram": "https://api.instagram.com/oauth/authorize",
-        }[provider]
-        scope = {
-            "google": "openid email profile",
-            "facebook": "email public_profile",
-            "instagram": "user_profile",
-        }[provider]
+        auth_base = "https://accounts.google.com/o/oauth2/v2/auth"
+        scope = "openid email profile"
         params = urlencode(
             {
                 "client_id": client_id,
@@ -197,6 +251,8 @@ class AuthService:
                 "response_type": "code",
                 "scope": scope,
                 "state": role,
+                "access_type": "offline",
+                "prompt": "select_account",
             }
         )
         return {"provider": provider, "configured": True, "authorization_url": f"{auth_base}?{params}"}
@@ -329,19 +385,28 @@ class AuthService:
             return cursor.lastrowid
 
     def me(self, token: str) -> dict | None:
+        claims = self._verify_session_token(token)
+        if not claims:
+            return None
         with connect() as conn:
             row = conn.execute(
                 """
-                SELECT users.*
+                SELECT users.*, sessions.expires_at, sessions.revoked_at
                 FROM sessions
                 JOIN users ON users.id = sessions.user_id
                 WHERE sessions.token = ?
                 """,
                 (token,),
             ).fetchone()
-        if not row:
+        if not row or row.get("revoked_at"):
+            return None
+        if row.get("expires_at") and self._parse_iso(row["expires_at"]) <= self._utcnow():
             return None
         return self._shape_user(dict(row), token)
+
+    def logout(self, token: str) -> None:
+        with connect() as conn:
+            conn.execute("UPDATE sessions SET revoked_at = ? WHERE token = ?", (now_iso(), token))
 
     def _public_user(self, user_id: int) -> dict:
         with connect() as conn:
@@ -353,17 +418,29 @@ class AuthService:
         return self._shape_user(user, token)
 
     def _hash_password(self, password: str) -> str:
-        return hashlib.sha256(f"healthguard-demo:{password}".encode("utf-8")).hexdigest()
+        salt = secrets.token_hex(16)
+        rounds = 210_000
+        digest = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt.encode("utf-8"), rounds).hex()
+        return f"pbkdf2_sha256${rounds}${salt}${digest}"
+
+    def _verify_password(self, password: str, stored_hash: str) -> bool:
+        if stored_hash.startswith("pbkdf2_sha256$"):
+            _, rounds_text, salt, digest = stored_hash.split("$", 3)
+            candidate = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt.encode("utf-8"), int(rounds_text)).hex()
+            return secrets.compare_digest(candidate, digest)
+        legacy = hashlib.sha256(f"healthguard-demo:{password}".encode("utf-8")).hexdigest()
+        return secrets.compare_digest(legacy, stored_hash)
 
     def _verification_code(self) -> str:
         return f"{secrets.randbelow(1_000_000):06d}"
 
     def _create_session(self, user_id: int) -> str:
-        token = f"demo-{user_id}-{secrets.token_urlsafe(18)}"
+        expires_at_dt = self._utcnow() + timedelta(minutes=self._session_minutes())
+        token = self._sign_session_token(user_id, expires_at_dt)
         with connect() as conn:
             conn.execute(
-                "INSERT INTO sessions (token, user_id, created_at) VALUES (?, ?, ?)",
-                (token, user_id, now_iso()),
+                "INSERT INTO sessions (token, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)",
+                (token, user_id, now_iso(), self._dt_to_iso(expires_at_dt)),
             )
         return token
 
@@ -377,6 +454,7 @@ class AuthService:
             "email_verified": bool(user.get("email_verified")),
             "role_profile": json_loads(user.get("role_profile_json") or "{}"),
             "demo_token": token,
+            "session_expires_at": user.get("expires_at") or self._session_expiry_from_token(token),
             "capabilities": ROLE_CAPABILITIES.get(role, []),
             "landing_view": self._landing_view(role),
         }
@@ -389,3 +467,93 @@ class AuthService:
             "admin": "admin_console",
             "compliance": "audit_console",
         }.get(role, "assessment")
+
+    def _record_failed_login(self, row: dict) -> None:
+        count = int(row.get("failed_login_count") or 0) + 1
+        locked_until = None
+        if count >= self._max_failed_logins():
+            locked_until = self._dt_to_iso(self._utcnow() + timedelta(minutes=self._lockout_minutes()))
+        with connect() as conn:
+            conn.execute(
+                "UPDATE users SET failed_login_count = ?, locked_until = ? WHERE id = ?",
+                (count, locked_until, row["id"]),
+            )
+
+    def _clear_failed_logins(self, user_id: int) -> None:
+        with connect() as conn:
+            conn.execute("UPDATE users SET failed_login_count = 0, locked_until = NULL WHERE id = ?", (user_id,))
+
+    def _is_locked(self, row: dict) -> bool:
+        locked_until = row.get("locked_until")
+        return bool(locked_until and self._parse_iso(locked_until) > self._utcnow())
+
+    def _max_failed_logins(self) -> int:
+        return int(os.getenv("AUTH_MAX_FAILED_LOGINS", "5"))
+
+    def _lockout_minutes(self) -> int:
+        return int(os.getenv("AUTH_LOCKOUT_MINUTES", "15"))
+
+    def _session_minutes(self) -> int:
+        return int(os.getenv("AUTH_SESSION_MINUTES", "480"))
+
+    def _password_reset_minutes(self) -> int:
+        return int(os.getenv("AUTH_PASSWORD_RESET_MINUTES", "30"))
+
+    def _jwt_secret(self) -> str:
+        return os.getenv("HEALTHGUARD_JWT_SECRET") or os.getenv("SECRET_KEY") or "healthguard-local-dev-change-me"
+
+    def _sign_session_token(self, user_id: int, expires_at: datetime) -> str:
+        header = {"alg": "HS256", "typ": "JWT"}
+        payload = {
+            "sub": str(user_id),
+            "iat": int(self._utcnow().timestamp()),
+            "exp": int(expires_at.timestamp()),
+            "jti": secrets.token_urlsafe(16),
+            "iss": "healthguard-ai",
+        }
+        signing_input = f"{self._b64_json(header)}.{self._b64_json(payload)}"
+        signature = hmac.new(self._jwt_secret().encode("utf-8"), signing_input.encode("utf-8"), hashlib.sha256).digest()
+        return f"{signing_input}.{self._b64(signature)}"
+
+    def _verify_session_token(self, token: str) -> dict | None:
+        parts = token.split(".")
+        if len(parts) != 3:
+            return None
+        signing_input = ".".join(parts[:2])
+        expected = self._b64(hmac.new(self._jwt_secret().encode("utf-8"), signing_input.encode("utf-8"), hashlib.sha256).digest())
+        if not secrets.compare_digest(expected, parts[2]):
+            return None
+        try:
+            payload = json.loads(base64.urlsafe_b64decode(self._pad_b64(parts[1])).decode("utf-8"))
+        except (ValueError, json.JSONDecodeError):
+            return None
+        if int(payload.get("exp", 0)) <= int(self._utcnow().timestamp()):
+            return None
+        return payload
+
+    def _session_expiry_from_token(self, token: str) -> str | None:
+        claims = self._verify_session_token(token)
+        if not claims:
+            return None
+        return self._dt_to_iso(datetime.fromtimestamp(int(claims["exp"]), UTC))
+
+    def _b64_json(self, value: dict) -> str:
+        return self._b64(json.dumps(value, separators=(",", ":"), ensure_ascii=True).encode("utf-8"))
+
+    def _b64(self, value: bytes) -> str:
+        return base64.urlsafe_b64encode(value).decode("ascii").rstrip("=")
+
+    def _pad_b64(self, value: str) -> bytes:
+        return (value + "=" * (-len(value) % 4)).encode("ascii")
+
+    def _token_digest(self, token: str) -> str:
+        return hmac.new(self._jwt_secret().encode("utf-8"), token.encode("utf-8"), hashlib.sha256).hexdigest()
+
+    def _utcnow(self) -> datetime:
+        return datetime.now(UTC)
+
+    def _dt_to_iso(self, value: datetime) -> str:
+        return value.astimezone(UTC).isoformat()
+
+    def _parse_iso(self, value: str) -> datetime:
+        return datetime.fromisoformat(value.replace("Z", "+00:00")).astimezone(UTC)
